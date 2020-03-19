@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 
 .idea/
+tests/fixtures/marine/libmarine.so
