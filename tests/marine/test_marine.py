@@ -7,6 +7,25 @@ import pytest
 # TODO: test more common protocols: ARP, ICMP, HTTP, etc.
 
 
+def test_arp_filter_and_parse(marine_instance, arp_packet, mac_1, broadcast_mac, ip_1, ip_2,
+                              extracted_fields_from_arp_packet):
+    expected = dict(zip(extracted_fields_from_arp_packet, map(str, [mac_1, broadcast_mac, mac_1, ip_1, broadcast_mac, ip_2])))
+    passed, output = marine_instance.filter_and_parse(arp_packet, 'arp', 'arp', extracted_fields_from_arp_packet)
+
+    assert passed
+    assert expected == output
+
+
+def test_icmp_filter_and_parse(marine_instance, icmp_packet, mac_1, mac_2, ip_1, ip_2, icmp_type,
+                               extracted_fields_from_icmp_packet):
+    expected = dict(zip(extracted_fields_from_icmp_packet, map(str, [mac_1, mac_2, ip_1, ip_2, icmp_type])))
+
+    passed, output = marine_instance.filter_and_parse(icmp_packet, 'ip', 'icmp', extracted_fields_from_icmp_packet)
+
+    assert passed
+    assert expected == output
+
+
 def test_tcp_filter_and_parse(marine_instance, tcp_packet, mac_1, mac_2, ip_1, ip_2, port_1, port_2,
                               extracted_fields_from_tcp_packet):
     expected = dict(zip(extracted_fields_from_tcp_packet, map(str, [mac_1, mac_2, ip_1, ip_2, port_1, port_2])))
@@ -24,6 +43,17 @@ def test_udp_filter_and_parse(marine_instance, udp_packet, mac_1, mac_2, ip_1, i
 
     assert passed
     assert expected == output
+
+
+def test_dns_filter_and_parse(marine_instance, dns_packet, mac_1, mac_2, ip_1, ip_2, port_3, port_4,
+                              byte_field_1, byte_field_2, url_1, extracted_fields_from_dns_packet):
+    expected = dict(zip(extracted_fields_from_dns_packet, map(str, 
+                [mac_1, mac_2, ip_1, ip_2, port_3, port_4, byte_field_1, byte_field_2, url_1])))
+    passed, output = marine_instance.filter_and_parse(dns_packet, 'ip', 'dns', extracted_fields_from_dns_packet)
+
+    assert passed
+    assert expected == output
+
 
 
 def test_filter_and_parse_without_fields(marine_instance, tcp_packet):
