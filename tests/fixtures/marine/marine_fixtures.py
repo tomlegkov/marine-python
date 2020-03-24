@@ -1,84 +1,75 @@
 import os
-from ipaddress import IPv4Address
-from random import getrandbits, randint, choices
-from typing import TypedDict, List
+from typing import Dict, List
 import string
 
 import pytest
 from pypacker.layer12 import ethernet, arp
 from pypacker.layer3 import ip, icmp
 from pypacker.layer4 import tcp, udp
-from pypacker.layer567 import dns, http
+from pypacker.layer567 import dns, http, dhcp
 
 from marine import Marine
 
 
-class HttpDescription(TypedDict):
-    http_type: str
-    uri: str
-    version: str
-    host: str
-    body: str
+@pytest.fixture
+def url_1() -> str:
+    return "www.testwebsite.com"
 
 
-def create_random_ip() -> str:
-    return str(IPv4Address(getrandbits(32)))
+@pytest.fixture
+def http_type() -> str:
+    return "GET"
 
 
-def create_random_mac() -> str:
-    return "00:00:00:%02x:%02x:%02x" % (
-        randint(0, 255),
-        randint(0, 255),
-        randint(0, 255),
-    )
+@pytest.fixture
+def http_uri() -> str:
+    return "/subtest/subsubtest"
 
 
-def create_random_string(length: int) -> str:
-    return "".join(choices(string.ascii_lowercase, k=length))
+@pytest.fixture
+def http_version() -> str:
+    return "HTTP/1.1"
 
 
-def create_random_url(length: int = 8) -> str:
-    return "www.%s.com" % (create_random_string(length))
+@pytest.fixture
+def http_body() -> str:
+    return "random body \x09\xff\x00"
 
 
-def create_random_http_get() -> HttpDescription:
+@pytest.fixture
+def http_get(url_1: str) -> Dict[str, str]:
     return {
         "http_type": "GET",
-        "uri": f"/{create_random_string(8)}",
+        "uri": "/subtest/subsubtest",
         "version": "HTTP/1.1",
-        "host": create_random_url(),
-        "body": create_random_string(20),
+        "host": url_1,
+        "body": "random body \x09\xff\x00",
     }
 
 
 @pytest.fixture
-def http_get() -> HttpDescription:
-    return create_random_http_get()
-
-
-@pytest.fixture
-def url_1() -> str:
-    return create_random_url()
-
-
-@pytest.fixture
 def ip_1() -> str:
-    return create_random_ip()
+    return "21.53.75.1"
 
 
 @pytest.fixture
 def ip_2() -> str:
-    return create_random_ip()
+    return "10.0.0.255"
+
+
+@pytest.fixture
+def broadcast_ip() -> str:
+    return "255.255.255.255"
 
 
 @pytest.fixture
 def mac_1() -> str:
-    return create_random_mac()
+    return "00:00:00:5f:a5:c0"
 
 
 @pytest.fixture
 def mac_2() -> str:
-    return create_random_mac()
+    return "00:00:00:ff:00:1e"
 
 
 @pytest.fixture
@@ -88,27 +79,32 @@ def broadcast_mac() -> str:
 
 @pytest.fixture
 def port_1() -> int:
-    return randint(1, 60000)
+    return 16424
 
 
 @pytest.fixture
 def port_2() -> int:
-    return randint(1, 60000)
+    return 41799
 
 
 @pytest.fixture
 def port_3() -> int:
-    return randint(1, 60000)
+    return 72
 
 
 @pytest.fixture
 def port_4() -> int:
-    return randint(1, 60000)
+    return 6985
 
 
 @pytest.fixture
 def dns_port() -> int:
     return 53
+
+
+@pytest.fixture
+def dhcp_port() -> int:
+    return 68
 
 
 @pytest.fixture
@@ -161,6 +157,14 @@ def extracted_fields_from_udp_packet(extracted_fields_from_ip_packet) -> List[st
 @pytest.fixture
 def extracted_fields_from_dns_packet(extracted_fields_from_udp_packet) -> List[str]:
     return extracted_fields_from_udp_packet + ["dns.qry.name"]
+
+
+@pytest.fixture
+def extracted_fields_from_dhcp_packet(extracted_fields_from_udp_packet) -> List[str]:
+    return extracted_fields_from_udp_packet + [
+        "dhcp.ip.your",
+        "dhcp.option.dhcp_server_id",
+    ]
 
 
 @pytest.fixture
@@ -241,20 +245,53 @@ def dns_packet(
 
 
 @pytest.fixture
+def dhcp_packet(
+    ethernet_packet: ethernet.Ethernet,
+    ip_1: str,
+    ip_2: str,
+    port_3: int,
+    dhcp_port: int,
+    broadcast_ip: str,
+) -> bytes:
+    packet = (
+        ethernet_packet
+        + ip.IP(src_s=ip_1, dst_s=broadcast_ip, p=ip.IP_PROTO_UDP)
+        + udp.UDP(sport=port_3, dport=dhcp_port)
+        + dhcp.DHCP(
+            yiaddr_s=ip_2,
+            magic=dhcp.DHCP_MAGIC,
+            opts=[
+                dhcp.DHCPOpt(
+                    type=dhcp.DHCP_OPT_SERVER_ID,
+                    len=4,
+                    body_bytes=bytes(int(num) for num in ip_1.split(".")),
+                )
+            ],
+        )
+    )
+    print(packet.bin())
+    return packet.bin()
+
+
+@pytest.fixture
 def http_packet(
     ethernet_packet: ethernet.Ethernet,
     ip_1: str,
     ip_2: str,
     port_1: int,
     http_port: int,
-    http_get: HttpDescription,
+    http_type: str,
+    http_uri: str,
+    http_version: str,
+    http_body: str,
+    url_1: str,
 ) -> bytes:
     packet = (
         ethernet_packet
         + ip.IP(src_s=ip_1, dst_s=ip_2)
         + tcp.TCP(sport=port_1, dport=http_port)
         + http.HTTP(
-            f'{http_get["http_type"]} {http_get["uri"]} {http_get["version"]}\r\nHost: {http_get["host"]}\r\n\r\n{http_get["body"]}\r\n'.encode()
+            f"{http_type} {http_uri} {http_version}\r\nHost: {url_1}\r\n\r\n{http_body}\r\n".encode()
         )
     )
     return packet.bin()

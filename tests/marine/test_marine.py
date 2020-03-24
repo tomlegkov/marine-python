@@ -2,159 +2,124 @@
 Note: in order to run the tests, you must put libmarine.so next to the marine_fixtures.py file
 """
 import pytest
-from typing import List, Dict
+from pytest_lazyfixture import lazy_fixture
+from parametrization import Parametrization
+from typing import List, Dict, Union
 from marine import Marine
 
 
-def test_arp_filter_and_parse(
+# TODO: Add a test for FTP.
+
+
+@Parametrization.parameters(
+    "packet",
+    "fields_expected_fixture_name",
+    "extracted_fields_from_packet",
+    "bpf_filter",
+    "display_filter",
+)
+@Parametrization.case(
+    name="ARP packet",
+    packet=lazy_fixture("arp_packet"),
+    fields_expected_fixture_name=[
+        "mac_1",
+        "broadcast_mac",
+        "mac_1",
+        "ip_1",
+        "broadcast_mac",
+        "ip_2",
+    ],
+    extracted_fields_from_packet=lazy_fixture("extracted_fields_from_arp_packet"),
+    bpf_filter="arp",
+    display_filter="arp",
+)
+@Parametrization.case(
+    name="ICMP packet",
+    packet=lazy_fixture("icmp_packet"),
+    fields_expected_fixture_name=["mac_1", "mac_2", "ip_1", "ip_2", "icmp_echo_type"],
+    extracted_fields_from_packet=lazy_fixture("extracted_fields_from_icmp_packet"),
+    bpf_filter="ip",
+    display_filter="icmp",
+)
+@Parametrization.case(
+    name="TCP packet",
+    packet=lazy_fixture("tcp_packet"),
+    fields_expected_fixture_name=["mac_1", "mac_2", "ip_1", "ip_2", "port_1", "port_2"],
+    extracted_fields_from_packet=lazy_fixture("extracted_fields_from_tcp_packet"),
+    bpf_filter="ip",
+    display_filter="tcp",
+)
+@Parametrization.case(
+    name="DNS packet",
+    packet=lazy_fixture("dns_packet"),
+    fields_expected_fixture_name=[
+        "mac_1",
+        "mac_2",
+        "ip_1",
+        "ip_2",
+        "port_3",
+        "dns_port",
+        "url_1",
+    ],
+    extracted_fields_from_packet=lazy_fixture("extracted_fields_from_dns_packet"),
+    bpf_filter="ip",
+    display_filter="dns",
+)
+@Parametrization.case(
+    name="DHCP packet",
+    packet=lazy_fixture("dhcp_packet"),
+    fields_expected_fixture_name=[
+        "mac_1",
+        "mac_2",
+        "ip_1",
+        "broadcast_ip",
+        "port_3",
+        "dhcp_port",
+        "ip_2",
+        "ip_1",
+    ],
+    extracted_fields_from_packet=lazy_fixture("extracted_fields_from_dhcp_packet"),
+    bpf_filter="ip",
+    display_filter="dhcp",
+)
+@Parametrization.case(
+    name="HTTP packet",
+    packet=lazy_fixture("http_packet"),
+    fields_expected_fixture_name=[
+        "mac_1",
+        "mac_2",
+        "ip_1",
+        "ip_2",
+        "port_1",
+        "http_port",
+        "http_type",
+        "http_uri",
+        "http_version",
+        "url_1",
+    ],
+    extracted_fields_from_packet=lazy_fixture("extracted_fields_from_http_packet"),
+    bpf_filter="ip",
+    display_filter="http",
+)
+def test_packet_filter_and_parse(
+    request,
     marine_instance: Marine,
-    arp_packet: bytes,
-    mac_1: str,
-    broadcast_mac: str,
-    ip_1: str,
-    ip_2: str,
-    extracted_fields_from_arp_packet: List[str],
+    packet: bytes,
+    fields_expected_fixture_name: List[Union[str, int]],
+    extracted_fields_from_packet: List[str],
+    bpf_filter: str,
+    display_filter: str,
 ):
-    """
-    Testing layer 2 protocol parsing.
-    """
     expected = dict(
         zip(
-            extracted_fields_from_arp_packet,
-            map(str, [mac_1, broadcast_mac, mac_1, ip_1, broadcast_mac, ip_2]),
-        )
-    )
-    passed, output = marine_instance.filter_and_parse(
-        arp_packet, "arp", "arp", extracted_fields_from_arp_packet
-    )
-
-    assert passed
-    assert expected == output
-
-
-def test_icmp_filter_and_parse(
-    marine_instance: Marine,
-    icmp_packet: bytes,
-    mac_1: str,
-    mac_2: str,
-    ip_1: str,
-    ip_2: str,
-    icmp_echo_type: int,
-    extracted_fields_from_icmp_packet: List[str],
-):
-    """
-    Testing layer 3 protocol parsing.
-    """
-    expected = dict(
-        zip(
-            extracted_fields_from_icmp_packet,
-            map(str, [mac_1, mac_2, ip_1, ip_2, icmp_echo_type]),
-        )
-    )
-
-    passed, output = marine_instance.filter_and_parse(
-        icmp_packet, "ip", "icmp", extracted_fields_from_icmp_packet
-    )
-
-    assert passed
-    assert expected == output
-
-
-def test_tcp_filter_and_parse(
-    marine_instance: Marine,
-    tcp_packet: bytes,
-    mac_1: str,
-    mac_2: str,
-    ip_1: str,
-    ip_2: str,
-    port_1: int,
-    port_2: int,
-    extracted_fields_from_tcp_packet: List[str],
-):
-    """
-    Testing layer 4 protocol parsing.
-    """
-    expected = dict(
-        zip(
-            extracted_fields_from_tcp_packet,
-            map(str, [mac_1, mac_2, ip_1, ip_2, port_1, port_2]),
-        )
-    )
-
-    passed, output = marine_instance.filter_and_parse(
-        tcp_packet, "ip", "tcp", extracted_fields_from_tcp_packet
-    )
-
-    assert passed
-    assert expected == output
-
-
-def test_dns_filter_and_parse(
-    marine_instance: Marine,
-    dns_packet: bytes,
-    mac_1: str,
-    mac_2: str,
-    ip_1: str,
-    ip_2: str,
-    port_3: int,
-    dns_port: int,
-    url_1: str,
-    extracted_fields_from_dns_packet: List[str],
-):
-    """
-    Testing a layer 567 protocol, and dns specificaly to check query parsing.
-    """
-    expected = dict(
-        zip(
-            extracted_fields_from_dns_packet,
-            map(str, [mac_1, mac_2, ip_1, ip_2, port_3, dns_port, url_1]),
-        )
-    )
-    passed, output = marine_instance.filter_and_parse(
-        dns_packet, "ip", "dns", extracted_fields_from_dns_packet
-    )
-
-    assert passed
-    assert expected == output
-
-
-def test_http_filter_and_parse(
-    marine_instance: Marine,
-    http_packet: bytes,
-    mac_1: str,
-    mac_2: str,
-    ip_1: str,
-    ip_2: str,
-    port_1: int,
-    http_port: int,
-    http_get: Dict[str, str],
-    extracted_fields_from_http_packet: List[str],
-):
-    """
-    Testing a layer 567 protocol, and http speificaly for text fields.
-    """
-    expected = dict(
-        zip(
-            extracted_fields_from_http_packet,
+            extracted_fields_from_packet,
             map(
-                str,
-                [
-                    mac_1,
-                    mac_2,
-                    ip_1,
-                    ip_2,
-                    port_1,
-                    http_port,
-                    http_get["http_type"],
-                    http_get["uri"],
-                    http_get["version"],
-                    http_get["host"],
-                ],
+                lambda x: str(request.getfixturevalue(x)), fields_expected_fixture_name
             ),
         )
     )
     passed, output = marine_instance.filter_and_parse(
-        http_packet, "ip", "http", extracted_fields_from_http_packet
+        packet, bpf_filter, display_filter, extracted_fields_from_packet
     )
 
     assert passed
