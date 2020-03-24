@@ -1,6 +1,5 @@
 import os
 from typing import Dict, List
-import string
 
 import pytest
 from pypacker.layer12 import ethernet, arp
@@ -269,7 +268,6 @@ def dhcp_packet(
             ],
         )
     )
-    print(packet.bin())
     return packet.bin()
 
 

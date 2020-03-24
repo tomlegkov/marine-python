@@ -4,7 +4,7 @@ Note: in order to run the tests, you must put libmarine.so next to the marine_fi
 import pytest
 from pytest_lazyfixture import lazy_fixture
 from parametrization import Parametrization
-from typing import List, Dict, Union
+from typing import List, Union
 from marine import Marine
 
 
