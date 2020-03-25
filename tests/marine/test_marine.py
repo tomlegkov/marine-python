@@ -360,17 +360,15 @@ def test_packet_doesnt_pass_filter_because_of_display_filter(
 
 
 def test_illegal_bpf_in_filter_and_parse(marine_instance: Marine, tcp_packet: bytes):
-    with pytest.raises(ValueError) as excinfo:
+    with pytest.raises(ValueError, match="Failed compiling the BPF"):
         marine_instance.filter_and_parse(tcp_packet, bpf="what is this bpf?")
-    assert "Failed compiling the BPF" in str(excinfo)
 
 
 def test_illegal_display_filter_in_filter_and_parse(
     marine_instance: Marine, tcp_packet: bytes
 ):
-    with pytest.raises(ValueError) as excinfo:
+    with pytest.raises(ValueError, match="neither a field nor a protocol name"):
         marine_instance.filter_and_parse(tcp_packet, display_filter="illegal_filter")
-    assert "neither a field nor a protocol name" in str(excinfo)
 
 
 def test_illegal_fields_in_filter_and_parse(marine_instance: Marine, tcp_packet: bytes):
@@ -388,6 +386,5 @@ def test_illegal_fields_in_filter_and_parse(marine_instance: Marine, tcp_packet:
 def test_filter_and_parse_with_no_parameters(
     marine_instance: Marine, tcp_packet: bytes
 ):
-    with pytest.raises(ValueError) as excinfo:
+    with pytest.raises(ValueError, match="must be passed"):
         marine_instance.filter_and_parse(tcp_packet)
-    assert "must be passed" in str(excinfo)
