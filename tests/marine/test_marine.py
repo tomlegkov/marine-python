@@ -2,128 +2,328 @@
 Note: in order to run the tests, you must put libmarine.so next to the marine_fixtures.py file
 """
 import pytest
-from pytest_lazyfixture import lazy_fixture
-from parametrization import Parametrization
 from typing import List, Union
 from marine import Marine
+
+from pypacker.layer12 import ethernet, arp
+from pypacker.layer3 import ip, icmp
+from pypacker.layer4 import tcp, udp
+from pypacker.layer567 import dns, http, dhcp
 
 
 # TODO: Add a test for FTP.
 
 
-@Parametrization.parameters(
-    "packet",
-    "fields_expected_fixture_name",
-    "extracted_fields_from_packet",
-    "bpf_filter",
-    "display_filter",
-)
-@Parametrization.case(
-    name="ARP packet",
-    packet=lazy_fixture("arp_packet"),
-    fields_expected_fixture_name=[
-        "mac_1",
-        "broadcast_mac",
-        "mac_1",
-        "ip_1",
-        "broadcast_mac",
-        "ip_2",
-    ],
-    extracted_fields_from_packet=lazy_fixture("extracted_fields_from_arp_packet"),
-    bpf_filter="arp",
-    display_filter="arp",
-)
-@Parametrization.case(
-    name="ICMP packet",
-    packet=lazy_fixture("icmp_packet"),
-    fields_expected_fixture_name=["mac_1", "mac_2", "ip_1", "ip_2", "icmp_echo_type"],
-    extracted_fields_from_packet=lazy_fixture("extracted_fields_from_icmp_packet"),
-    bpf_filter="ip",
-    display_filter="icmp",
-)
-@Parametrization.case(
-    name="TCP packet",
-    packet=lazy_fixture("tcp_packet"),
-    fields_expected_fixture_name=["mac_1", "mac_2", "ip_1", "ip_2", "port_1", "port_2"],
-    extracted_fields_from_packet=lazy_fixture("extracted_fields_from_tcp_packet"),
-    bpf_filter="ip",
-    display_filter="tcp",
-)
-@Parametrization.case(
-    name="DNS packet",
-    packet=lazy_fixture("dns_packet"),
-    fields_expected_fixture_name=[
-        "mac_1",
-        "mac_2",
-        "ip_1",
-        "ip_2",
-        "port_3",
-        "dns_port",
-        "url_1",
-    ],
-    extracted_fields_from_packet=lazy_fixture("extracted_fields_from_dns_packet"),
-    bpf_filter="ip",
-    display_filter="dns",
-)
-@Parametrization.case(
-    name="DHCP packet",
-    packet=lazy_fixture("dhcp_packet"),
-    fields_expected_fixture_name=[
-        "mac_1",
-        "mac_2",
-        "ip_1",
-        "broadcast_ip",
-        "port_3",
-        "dhcp_port",
-        "ip_2",
-        "ip_1",
-    ],
-    extracted_fields_from_packet=lazy_fixture("extracted_fields_from_dhcp_packet"),
-    bpf_filter="ip",
-    display_filter="dhcp",
-)
-@Parametrization.case(
-    name="HTTP packet",
-    packet=lazy_fixture("http_packet"),
-    fields_expected_fixture_name=[
-        "mac_1",
-        "mac_2",
-        "ip_1",
-        "ip_2",
-        "port_1",
-        "http_port",
-        "http_type",
-        "http_uri",
-        "http_version",
-        "url_1",
-    ],
-    extracted_fields_from_packet=lazy_fixture("extracted_fields_from_http_packet"),
-    bpf_filter="ip",
-    display_filter="http",
-)
-def test_packet_filter_and_parse(
-    request,
+def general_filter_and_parse_test(
     marine_instance: Marine,
     packet: bytes,
-    fields_expected_fixture_name: List[Union[str, int]],
-    extracted_fields_from_packet: List[str],
     bpf_filter: str,
     display_filter: str,
+    extracted_fields_from_packet: List[str],
+    expected_values: List[Union[str, int]],
 ):
-    expected = dict(
-        zip(
-            extracted_fields_from_packet,
-            map(
-                lambda x: str(request.getfixturevalue(x)), fields_expected_fixture_name
-            ),
-        )
-    )
+    expected = dict(zip(extracted_fields_from_packet, map(str, expected_values)))
     passed, output = marine_instance.filter_and_parse(
         packet, bpf_filter, display_filter, extracted_fields_from_packet
     )
 
     assert passed
     assert expected == output
+
+
+def test_arp_packet_filter_and_parse(marine_instance: Marine):
+    src_mac = "00:00:00:12:34:ff"
+    broadcast_mac = "ff:ff:ff:ff:ff:ff"
+    src_ip = "21.53.78.255"
+    target_ip = "10.0.0.255"
+    bpf_filter = "arp"
+    display_filter = "arp"
+    extracted_fields_from_arp_packet = [
+        "eth.src",
+        "eth.dst",
+        "arp.src.hw_mac",
+        "arp.src.proto_ipv4",
+        "arp.dst.hw_mac",
+        "arp.dst.proto_ipv4",
+    ]
+
+    packet = ethernet.Ethernet(src_s=src_mac, dst_s=broadcast_mac) + arp.ARP(
+        sha_s=src_mac, spa_s=src_ip, tha_s=broadcast_mac, tpa_s=target_ip
+    )
+
+    general_filter_and_parse_test(
+        marine_instance=marine_instance,
+        packet=packet.bin(),
+        bpf_filter=bpf_filter,
+        display_filter=display_filter,
+        extracted_fields_from_packet=extracted_fields_from_arp_packet,
+        expected_values=[
+            src_mac,
+            broadcast_mac,
+            src_mac,
+            src_ip,
+            broadcast_mac,
+            target_ip,
+        ],
+    )
+
+
+def test_icmp_packet_filter_and_parse(marine_instance: Marine):
+    src_mac = "00:00:00:12:34:ff"
+    dst_mac = "00:00:00:ff:00:1e"
+    src_ip = "21.53.78.255"
+    dst_ip = "10.0.0.255"
+    icmp_echo_type = 8
+    bpf_filter = "ip"
+    display_filter = "icmp"
+    extracted_fields_from_icmp_packet = [
+        "eth.src",
+        "eth.dst",
+        "ip.src",
+        "ip.dst",
+        "icmp.type",
+    ]
+
+    packet = (
+        ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
+        + ip.IP(src_s=src_ip, dst_s=dst_ip, p=ip.IP_PROTO_ICMP)
+        + icmp.ICMP(type=icmp_echo_type)
+        + icmp.ICMP.Echo()
+    )
+
+    general_filter_and_parse_test(
+        marine_instance=marine_instance,
+        packet=packet.bin(),
+        bpf_filter=bpf_filter,
+        display_filter=display_filter,
+        extracted_fields_from_packet=extracted_fields_from_icmp_packet,
+        expected_values=[src_mac, dst_mac, src_ip, dst_ip, icmp_echo_type],
+    )
+
+
+def test_tcp_packet_filter_and_parse(marine_instance: Marine):
+    src_mac = "00:00:00:12:34:ff"
+    dst_mac = "00:00:00:ff:00:1e"
+    src_ip = "21.53.78.255"
+    dst_ip = "10.0.0.255"
+    src_port = 16424
+    dst_port = 41799
+    bpf_filter = "ip"
+    display_filter = "tcp"
+    extracted_fields_from_tcp_packet = [
+        "eth.src",
+        "eth.dst",
+        "ip.src",
+        "ip.dst",
+        "tcp.srcport",
+        "tcp.dstport",
+    ]
+
+    packet = (
+        ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
+        + ip.IP(src_s=src_ip, dst_s=dst_ip)
+        + tcp.TCP(sport=src_port, dport=dst_port)
+    )
+
+    general_filter_and_parse_test(
+        marine_instance=marine_instance,
+        packet=packet.bin(),
+        bpf_filter=bpf_filter,
+        display_filter=display_filter,
+        extracted_fields_from_packet=extracted_fields_from_tcp_packet,
+        expected_values=[src_mac, dst_mac, src_ip, dst_ip, src_port, dst_port],
+    )
+
+
+def test_dns_packet_filter_and_parse(marine_instance: Marine):
+    src_mac = "00:00:00:12:34:ff"
+    dst_mac = "00:00:00:ff:00:1e"
+    src_ip = "21.53.78.255"
+    dst_ip = "10.0.0.255"
+    src_port = 16424
+    dst_port = 53
+    bpf_filter = "ip"
+    display_filter = "dns"
+    domain_name = "www.testwebsite.com"
+    extracted_fields_from_dns_packet = [
+        "eth.src",
+        "eth.dst",
+        "ip.src",
+        "ip.dst",
+        "udp.srcport",
+        "udp.dstport",
+        "dns.qry.name",
+    ]
+
+    packet = (
+        ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
+        + ip.IP(src_s=src_ip, dst_s=dst_ip, p=ip.IP_PROTO_UDP)
+        + udp.UDP(sport=src_port, dport=dst_port)
+        + dns.DNS(queries=[dns.DNS.Query(name_s=domain_name, type=1, cls=1)])
+    )
+
+    general_filter_and_parse_test(
+        marine_instance=marine_instance,
+        packet=packet.bin(),
+        bpf_filter=bpf_filter,
+        display_filter=display_filter,
+        extracted_fields_from_packet=extracted_fields_from_dns_packet,
+        expected_values=[
+            src_mac,
+            dst_mac,
+            src_ip,
+            dst_ip,
+            src_port,
+            dst_port,
+            domain_name,
+        ],
+    )
+
+
+def test_dhcp_packet_filter_and_parse(marine_instance: Marine):
+    src_mac = "00:00:00:12:34:ff"
+    dst_mac = "00:00:00:ff:00:1e"
+    src_ip = "21.53.78.255"
+    given_ip = "10.0.0.255"
+    broadcast_ip = "255.255.255.255"
+    src_port = 16424
+    dst_port = 68
+    bpf_filter = "ip"
+    display_filter = "dhcp"
+    extracted_fields_from_dhcp_packet = [
+        "eth.src",
+        "eth.dst",
+        "ip.src",
+        "ip.dst",
+        "udp.srcport",
+        "udp.dstport",
+        "dhcp.ip.your",
+        "dhcp.option.dhcp_server_id",
+    ]
+
+    packet = (
+        ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
+        + ip.IP(src_s=src_ip, dst_s=broadcast_ip, p=ip.IP_PROTO_UDP)
+        + udp.UDP(sport=src_port, dport=dst_port)
+        + dhcp.DHCP(
+            yiaddr_s=given_ip,
+            magic=dhcp.DHCP_MAGIC,
+            opts=[
+                dhcp.DHCPOpt(
+                    type=dhcp.DHCP_OPT_SERVER_ID,
+                    len=4,
+                    body_bytes=bytes(int(num) for num in src_ip.split(".")),
+                )
+            ],
+        )
+    )
+
+    general_filter_and_parse_test(
+        marine_instance=marine_instance,
+        packet=packet.bin(),
+        bpf_filter=bpf_filter,
+        display_filter=display_filter,
+        extracted_fields_from_packet=extracted_fields_from_dhcp_packet,
+        expected_values=[
+            src_mac,
+            dst_mac,
+            src_ip,
+            broadcast_ip,
+            src_port,
+            dst_port,
+            given_ip,
+            src_ip,
+        ],
+    )
+
+
+def test_http_packet_filter_and_parse(marine_instance: Marine):
+    src_mac = "00:00:00:12:34:ff"
+    dst_mac = "00:00:00:ff:00:1e"
+    src_ip = "21.53.78.255"
+    dst_ip = "10.0.0.255"
+    src_port = 16424
+    dst_port = 80
+    http_type = "GET"
+    uri = "/subtest/subsubtest"
+    version = "HTTP/1.1"
+    domain_name = "www.testwebsite.com"
+    body = "random body \x09\xff\x00"
+    bpf_filter = "ip"
+    display_filter = "http"
+    extracted_fields_from_http_packet = [
+        "eth.src",
+        "eth.dst",
+        "ip.src",
+        "ip.dst",
+        "tcp.srcport",
+        "tcp.dstport",
+        "http.request.method",
+        "http.request.uri",
+        "http.request.version",
+        "http.host",
+    ]
+
+    packet = (
+        ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
+        + ip.IP(src_s=src_ip, dst_s=dst_ip)
+        + tcp.TCP(sport=src_port, dport=dst_port)
+        + http.HTTP(
+            f"{http_type} {uri} {version}\r\nHost: {domain_name}\r\n\r\n{body}\r\n".encode()
+        )
+    )
+
+    general_filter_and_parse_test(
+        marine_instance=marine_instance,
+        packet=packet.bin(),
+        bpf_filter=bpf_filter,
+        display_filter=display_filter,
+        extracted_fields_from_packet=extracted_fields_from_http_packet,
+        expected_values=[
+            src_mac,
+            dst_mac,
+            src_ip,
+            dst_ip,
+            src_port,
+            dst_port,
+            http_type,
+            uri,
+            version,
+            domain_name,
+        ],
+    )
+
+
+def test_filter_and_parse_without_filters(marine_instance: Marine):
+    src_mac = "00:00:00:12:34:ff"
+    dst_mac = "00:00:00:ff:00:1e"
+    src_ip = "21.53.78.255"
+    dst_ip = "10.0.0.255"
+    src_port = 16424
+    dst_port = 41799
+    extracted_fields_from_tcp_packet = [
+        "eth.src",
+        "eth.dst",
+        "ip.src",
+        "ip.dst",
+        "tcp.srcport",
+        "tcp.dstport",
+    ]
+
+    packet = (
+        ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
+        + ip.IP(src_s=src_ip, dst_s=dst_ip)
+        + tcp.TCP(sport=src_port, dport=dst_port)
+    )
+
+    general_filter_and_parse_test(
+        marine_instance=marine_instance,
+        packet=packet.bin(),
+        bpf_filter=None,
+        display_filter=None,
+        extracted_fields_from_packet=extracted_fields_from_tcp_packet,
+        expected_values=[src_mac, dst_mac, src_ip, dst_ip, src_port, dst_port],
+    )
 
 
 def test_filter_and_parse_without_fields(marine_instance: Marine, tcp_packet: bytes):
@@ -133,32 +333,7 @@ def test_filter_and_parse_without_fields(marine_instance: Marine, tcp_packet: by
     assert output is None
 
 
-def test_filter_and_parse_without_filters(
-    marine_instance: Marine,
-    tcp_packet: bytes,
-    mac_1: str,
-    mac_2: str,
-    ip_1: str,
-    ip_2: str,
-    port_1: int,
-    port_2: int,
-    extracted_fields_from_tcp_packet: List[str],
-):
-    expected = dict(
-        zip(
-            extracted_fields_from_tcp_packet,
-            map(str, [mac_1, mac_2, ip_1, ip_2, port_1, port_2]),
-        )
-    )
-    passed, output = marine_instance.filter_and_parse(
-        tcp_packet, fields=extracted_fields_from_tcp_packet
-    )
-
-    assert passed
-    assert expected == output
-
-
-def test_packet_doesnt_pass_filter_because_of_bfp(
+def test_packet_doesnt_pass_filter_because_of_bpf(
     marine_instance: Marine,
     tcp_packet: bytes,
     extracted_fields_from_tcp_packet: List[str],
