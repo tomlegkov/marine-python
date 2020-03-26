@@ -27,8 +27,12 @@ pip install marine
     `output` is a dict between field name to its parsed value.
      If the packet didn't pass the filter or fields weren't passed to the function, it will be `None`.
     
-   
-## Running Tests
+
+## Contributing
+### Guidelines
+Syntax formatting is done using [Black](https://github.com/psf/black)
+
+### Running Tests
 The tests are written using pytest. To run the tests, you need to provide the library file (`libmarine.so`),
 and place it next to the file `tests/fixtures/marine/marine_fixtures.py`.
 
