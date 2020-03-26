@@ -2,7 +2,7 @@
 Note: in order to run the tests, you must put libmarine.so next to the marine_fixtures.py file
 """
 import pytest
-from typing import List, Union
+from typing import List, Union, Optional
 from marine import Marine
 
 from pypacker.layer12 import ethernet, arp
@@ -17,8 +17,8 @@ from pypacker.layer567 import dns, http, dhcp
 def general_filter_and_parse_test(
     marine_instance: Marine,
     packet: bytes,
-    bpf_filter: str,
-    display_filter: str,
+    bpf_filter: Optional[str],
+    display_filter: Optional[str],
     extracted_fields_from_packet: List[str],
     expected_values: List[Union[str, int]],
 ):
