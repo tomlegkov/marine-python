@@ -13,7 +13,7 @@ MARINE_RESULT_POINTER = POINTER(MarineResult)
 
 
 class Marine:
-    def __init__(self, lib_path):
+    def __init__(self, lib_path: str, epan_auto_reset_count: int = None):
         if not os.path.exists(lib_path):
             raise ValueError(f"Marine could not be located at {lib_path}")
 
@@ -30,13 +30,8 @@ class Marine:
         if return_code < 0:
             raise RuntimeError("Could not initialize Marine")
 
-    @property
-    def epan_auto_reset_count(self):
-        return self._marine.get_epan_auto_reset_count()
-
-    @epan_auto_reset_count.setter
-    def epan_auto_reset_count(self, value):
-        self._marine.set_epan_auto_reset_count(value)
+        if epan_auto_reset_count:
+            self._marine.set_epan_auto_reset_count(epan_auto_reset_count)
 
     def filter_and_parse(
         self,

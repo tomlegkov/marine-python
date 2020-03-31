@@ -406,11 +406,5 @@ def test_validate_display_filter_failure(marine_instance: Marine):
     assert not marine_instance.validate_display_filter("illegal_filter")
 
 
-def test_get_epan_auto_reset_count_return_default_value(marine_instance: Marine):
-    assert marine_instance.epan_auto_reset_count == 20000
-
-
-def test_set_epan_auto_reset_count_return_default_value(marine_instance: Marine):
-    SOME_VALUE = 1
-    marine_instance.epan_auto_reset_count = SOME_VALUE
-    assert marine_instance.epan_auto_reset_count == SOME_VALUE
+def test_epan_auto_reset_count(marine_instance: Marine, epan_auto_reset_count: int):
+    assert marine_instance._marine.get_epan_auto_reset_count() == epan_auto_reset_count
