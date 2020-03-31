@@ -89,7 +89,6 @@ class Marine:
     def validate_bpf(self, bpf: str) -> bool:
         bpf = bpf.encode("utf-8")
         return bool(self._marine.validate_bpf(bpf))
-        
 
     @staticmethod
     def _parse_output(output: str) -> List[str]:
