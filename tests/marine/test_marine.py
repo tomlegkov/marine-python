@@ -388,3 +388,11 @@ def test_filter_and_parse_with_no_parameters(
 ):
     with pytest.raises(ValueError, match="must be passed"):
         marine_instance.filter_and_parse(tcp_packet)
+
+
+def test_validate_bpf_success(marine_instance: Marine):
+    assert marine_instance.validate_bpf("arp")
+
+
+def test_validate_bpf_failure(marine_instance: Marine):
+    assert not marine_instance.validate_bpf("what is this bpf?")
