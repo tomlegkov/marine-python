@@ -86,6 +86,10 @@ class Marine:
         self._marine.marine_free(marine_result)
         return success, result
 
+    def validate_bpf(self, bpf: str) -> bool:
+        bpf = bpf.encode("utf-8")
+        return bool(self._marine.validate_bpf(bpf))
+
     @staticmethod
     def _parse_output(output: str) -> List[str]:
         # TODO: this is a bottleneck. Find a better way to provide output from the c code
