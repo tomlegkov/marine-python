@@ -1,12 +1,13 @@
 import os
-from typing import List
+from pathlib import Path
+from typing import List, Union
 
 import pytest
 from pypacker.layer12 import ethernet
 from pypacker.layer3 import ip
 from pypacker.layer4 import tcp
 
-from marine import Marine
+from marine import Marine, MarinePool
 
 
 @pytest.fixture
@@ -25,6 +26,27 @@ def tcp_packet() -> bytes:
 
 
 @pytest.fixture(scope="session")
-def marine_instance() -> Marine:
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "libmarine.so")
-    return Marine(path)
+def marine_so_path() -> str:
+    path = Path(__file__).parent / "libmarine.so"
+    return str(path.resolve())
+
+
+@pytest.fixture(scope="session")
+def marine_instance(marine_so_path):
+    return Marine(marine_so_path)
+
+
+@pytest.fixture(scope="session")
+def marine_pool_instance(marine_so_path):
+    return MarinePool(marine_so_path)
+
+
+@pytest.fixture(scope="session", params=[False, True], ids=["marine", "marine_pool"])
+def marine_or_marine_pool(
+    request, marine_instance, marine_pool_instance
+) -> Union[Marine, MarinePool]:
+    use_marine_pool = request.param
+    if use_marine_pool:
+        return marine_pool_instance
+    else:
+        return marine_instance
