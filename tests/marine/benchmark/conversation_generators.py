@@ -133,7 +133,7 @@ def generate_raw_tcp_conversation(
             good_bpf=f"tcp src port {src_port} and tcp dst port {dst_port}",
             good_display_filter=f"tcp.srcport == {src_port} and tcp.dstport == {dst_port}",
             fields_to_extract=list(layer_3_expected_fields.keys())
-            + ["tcp.len", "tcp.srcport", "tcp.dstport",],
+            + ["tcp.len", "tcp.srcport", "tcp.dstport"],
             expected_parse_result=expected_parse_result,
         )
 
@@ -164,7 +164,7 @@ def generate_raw_udp_conversation(
             good_bpf=f"udp src port {src_port} and udp dst port {dst_port}",
             good_display_filter=f"udp.srcport == {src_port} and udp.dstport == {dst_port}",
             fields_to_extract=list(layer_3_expected_fields)
-            + ["udp.length", "udp.srcport", "udp.dstport",],
+            + ["udp.length", "udp.srcport", "udp.dstport"],
             expected_parse_result=expected_parse_result,
         )
 

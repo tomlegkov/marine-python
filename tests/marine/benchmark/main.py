@@ -78,7 +78,7 @@ def benchmark_wrapper(f: Callable[[List[BenchmarkPacket]], None]):
         delta_used_memory = end_used_memory - start_used_memory
         print(
             f"""
-Executed {f.__name__} on {len(packets)} packets in {delta_time:.2f} seconds, 
+Executed {f.__name__} on {len(packets)} packets in {delta_time:.2f} seconds,
 which is {(len(packets) / delta_time):.2f} packets per second.
 Started with {start_used_memory:.2f} MB, ended with {end_used_memory:.2f}. Delta is {delta_used_memory:.2f} MB.
 """
