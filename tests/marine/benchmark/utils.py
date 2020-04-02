@@ -1,7 +1,6 @@
 import struct
-from dataclasses import dataclass, field
-from random import randint
-from typing import List, Dict, Callable, Set, Tuple
+from dataclasses import dataclass
+from typing import List, Dict, Callable
 
 
 @dataclass
@@ -16,29 +15,18 @@ class BenchmarkPacket:
     expected_parse_result: Dict[str, str]
 
 
-@dataclass
-class IpPair:
+@dataclass(frozen=True)
+class Layer3Conversation:
     src_mac: str
     dst_mac: str
     src_ip: str
     dst_ip: str
-    _ports: Set[int] = field(default_factory=set)
-
-    def _generate_port(self) -> int:
-        port = randint(10000, 60000)
-        while port in self._ports:
-            port = randint(10000, 60000)
-        self._ports.add(port)
-        return port
-
-    def generate_port_pair(self) -> Tuple[int, int]:
-        return self._generate_port(), self._generate_port()
 
 
 @dataclass
 class ConversationGenerator:
     percentage_of_packets: float
-    generator: Callable[[IpPair, int], List[BenchmarkPacket]]
+    generator: Callable[[Layer3Conversation, int], List[BenchmarkPacket]]
 
 
 def write_cap(file_path: str, packets: List[bytes]):

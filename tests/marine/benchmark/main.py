@@ -34,20 +34,37 @@ from typing import List, Callable, Dict
 import psutil
 
 from marine import Marine
-from tests.marine.benchmark.benchmark_generator import generate_packets
-from tests.marine.benchmark.utils import BenchmarkPacket
+from .benchmark_generator import generate_packets
+from .utils import BenchmarkPacket
 
-AUTO_RESET_COUNT = 20000
+AUTO_RESET_COUNT = (
+    20000  # TODO use marine_instance.get_epan_reset_count() when it's implemented
+)
 
 marine_instance = Marine(
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "libmarine.so")
+    os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "..",
+        "..",
+        "fixtures",
+        "marine",
+        "libmarine.so",
+    )
 )
-process = psutil.Process(os.getpid())
+process = psutil.Process()
 benchmark_functions: Dict[str, Callable[[List[BenchmarkPacket]], None]] = dict()
 
 
 def get_used_memory_in_mb() -> float:
     return process.memory_info().rss / 1024.0 / 1024.0
+
+
+def create_3_expected_fields(packet: BenchmarkPacket) -> Dict[str, str]:
+    fields_to_extract = packet.fields_to_extract[:3]
+    expected = dict()
+    for field in fields_to_extract:
+        expected[field] = packet.expected_parse_result[field]
+    return expected
 
 
 def benchmark_wrapper(f: Callable[[List[BenchmarkPacket]], None]):
@@ -61,9 +78,9 @@ def benchmark_wrapper(f: Callable[[List[BenchmarkPacket]], None]):
         delta_used_memory = end_used_memory - start_used_memory
         print(
             f"""
-Executed {f.__name__} on {len(packets)} packets in {delta_time} seconds, 
-which is {len(packets) / delta_time} packets per second.
-Started with {start_used_memory} MB, ended with {end_used_memory}. Delta is {delta_used_memory} MB.
+Executed {f.__name__} on {len(packets)} packets in {delta_time:.2f} seconds, 
+which is {(len(packets) / delta_time):.2f} packets per second.
+Started with {start_used_memory:.2f} MB, ended with {end_used_memory:.2f}. Delta is {delta_used_memory:.2f} MB.
 """
         )
 
@@ -106,16 +123,11 @@ def benchmark_bpf_and_display_filter(packets: List[BenchmarkPacket]):
 @benchmark_wrapper
 def benchmark_3_fields(packets: List[BenchmarkPacket]):
     for packet in packets:
-        fields_to_extract = packet.fields_to_extract[:3]
-        expected = dict()
-        for field in fields_to_extract:  # TODO improve this
-            expected[field] = packet.expected_parse_result[field]
-
         passed, result = marine_instance.filter_and_parse(
             packet.packet, fields=packet.fields_to_extract[:3]
         )
         assert passed
-        assert expected == result
+        assert create_3_expected_fields(packet) == result
 
 
 @benchmark_wrapper
@@ -131,10 +143,6 @@ def benchmark_8_fields(packets: List[BenchmarkPacket]):
 @benchmark_wrapper
 def benchmark_bpf_and_display_filter_and_3_fields(packets: List[BenchmarkPacket]):
     for packet in packets:
-        fields_to_extract = packet.fields_to_extract[:3]
-        expected = dict()
-        for field in fields_to_extract:  # TODO improve this
-            expected[field] = packet.expected_parse_result[field]
         passed, result = marine_instance.filter_and_parse(
             packet.packet,
             bpf=packet.good_bpf,
@@ -142,7 +150,7 @@ def benchmark_bpf_and_display_filter_and_3_fields(packets: List[BenchmarkPacket]
             fields=packet.fields_to_extract[:3],
         )
         assert passed
-        assert expected == result
+        assert create_3_expected_fields(packet) == result
 
 
 @benchmark_wrapper
@@ -164,20 +172,18 @@ if __name__ == "__main__":
         "--benchmark", choices=["all"] + list(benchmark_functions.keys())
     )
     args = parser.parse_args()
-    generated_packets = generate_packets(
-        AUTO_RESET_COUNT
-    )  # TODO: this might need to be AUTO_RESET_COUNT + 1
+    run_all_functions = not args.benchmark or args.benchmark == "all"
+    packet_multiplier = len(benchmark_functions) if run_all_functions else 1
+    print("Generating packets...")
+    generated_packets = generate_packets(AUTO_RESET_COUNT * packet_multiplier)
+    print("Done generating, executing benchmarks...")
     benchmark_start_used_memory = get_used_memory_in_mb()
 
-    if not args.benchmark or args.benchmark == "all":
-        # TODO: I can take these from benchmark_functions, but I want them executed in this order
-        benchmark_bpf(generated_packets)
-        benchmark_display_filter(generated_packets)
-        benchmark_bpf_and_display_filter(generated_packets)
-        benchmark_3_fields(generated_packets)
-        benchmark_8_fields(generated_packets)
-        benchmark_bpf_and_display_filter_and_3_fields(generated_packets)
-        benchmark_bpf_and_display_filter_and_8_fields(generated_packets)
+    if run_all_functions:
+        for i, benchmark_function in enumerate(benchmark_functions.values()):
+            benchmark_function(
+                generated_packets[i * AUTO_RESET_COUNT : (i + 1) * AUTO_RESET_COUNT]
+            )
     elif args.benchmark in benchmark_functions:
         benchmark_functions[args.benchmark](generated_packets)
     else:
@@ -186,5 +192,5 @@ if __name__ == "__main__":
     benchmark_end_used_memory = get_used_memory_in_mb()
     memory_delta = benchmark_end_used_memory - benchmark_start_used_memory
     print(
-        f"Total memory usage (over all of the benchmarks) increased by {memory_delta} MB"
+        f"Total memory usage (over all of the benchmarks) increased by {memory_delta:.2f} MB"
     )

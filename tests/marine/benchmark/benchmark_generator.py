@@ -2,11 +2,11 @@ from ipaddress import IPv4Address
 from random import randint, getrandbits
 from typing import List
 
-from tests.marine.benchmark.conversation_generators import (
+from .conversation_generators import (
     generate_raw_tcp_conversation,
     generate_raw_udp_conversation,
 )
-from tests.marine.benchmark.utils import ConversationGenerator, IpPair, BenchmarkPacket
+from .utils import ConversationGenerator, Layer3Conversation, BenchmarkPacket
 
 CONVERSATION_GENERATORS = [
     ConversationGenerator(0.5, generate_raw_tcp_conversation),
@@ -40,27 +40,27 @@ def generate_ips(count: int) -> List[str]:
     return list(ips)
 
 
-def generate_ip_pairs(ip_count: int) -> List[IpPair]:
+def generate_layer_3_conversations(ip_count: int) -> List[Layer3Conversation]:
     ips = generate_ips(ip_count * 2)
     macs = generate_macs(ip_count * 2)
     # The list is already randomly generated, so taking consecutive values is random enough
     return [
-        IpPair(macs[i], macs[i + 1], ips[i], ips[i + 1])
+        Layer3Conversation(macs[i], macs[i + 1], ips[i], ips[i + 1])
         for i in range(0, ip_count * 2, 2)
     ]
 
 
 def generate_packets(count: int) -> List[BenchmarkPacket]:
     benchmark_packets = []
-    ip_pairs = generate_ip_pairs(count // 1000)
-    packets_per_ip_pair = count // len(ip_pairs)
-    for ip_pair in ip_pairs:
+    layer_3_conversations = generate_layer_3_conversations(count // 1000)
+    packets_per_conversation = count // len(layer_3_conversations)
+    for conversation in layer_3_conversations:
         for conversation_generator in CONVERSATION_GENERATORS:
             benchmark_packets.extend(
                 conversation_generator.generator(
-                    ip_pair,
+                    conversation,
                     int(
-                        packets_per_ip_pair
+                        packets_per_conversation
                         * conversation_generator.percentage_of_packets
                     ),
                 )

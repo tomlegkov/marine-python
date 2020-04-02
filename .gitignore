@@ -130,4 +130,3 @@ dmypy.json
 
 .idea/
 tests/fixtures/marine/libmarine.so
-tests/marine/benchmark/libmarine.so
