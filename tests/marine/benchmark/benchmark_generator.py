@@ -1,5 +1,5 @@
 from ipaddress import IPv4Address
-from random import randint, getrandbits
+from random import randint, getrandbits, shuffle
 from typing import List
 
 from .conversation_generators import (
@@ -28,7 +28,9 @@ def generate_macs(count: int) -> List[str]:
     macs = set()
     while len(macs) < count:
         macs.add(str(create_random_mac()))
-    return list(macs)
+    mac_list = list(macs)
+    shuffle(mac_list)
+    return mac_list
 
 
 def generate_ips(count: int) -> List[str]:
@@ -37,16 +39,18 @@ def generate_ips(count: int) -> List[str]:
     ips = set()
     while len(ips) < count:
         ips.add(str(IPv4Address(getrandbits(32))))
-    return list(ips)
+    ip_list = list(ips)
+    shuffle(ip_list)
+    return ip_list
 
 
-def generate_layer_3_conversations(ip_count: int) -> List[Layer3Conversation]:
-    ips = generate_ips(ip_count * 2)
-    macs = generate_macs(ip_count * 2)
+def generate_layer_3_conversations(count: int) -> List[Layer3Conversation]:
+    ips = generate_ips(count * 2)
+    macs = generate_macs(count * 2)
     # The list is already randomly generated, so taking consecutive values is random enough
     return [
         Layer3Conversation(macs[i], macs[i + 1], ips[i], ips[i + 1])
-        for i in range(0, ip_count * 2, 2)
+        for i in range(0, count * 2, 2)
     ]
 
 

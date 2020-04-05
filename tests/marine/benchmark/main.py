@@ -60,11 +60,10 @@ def get_used_memory_in_mb() -> float:
 
 
 def create_3_expected_fields(packet: BenchmarkPacket) -> Dict[str, str]:
-    fields_to_extract = packet.fields_to_extract[:3]
-    expected = dict()
-    for field in fields_to_extract:
-        expected[field] = packet.expected_parse_result[field]
-    return expected
+    return {
+        field: packet.expected_parse_result[field]
+        for field in packet.fields_to_extract[:3]
+    }
 
 
 def benchmark_wrapper(f: Callable[[List[BenchmarkPacket]], None]):

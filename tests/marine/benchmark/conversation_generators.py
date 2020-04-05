@@ -1,7 +1,6 @@
 import os
-from collections import defaultdict
 from random import randint
-from typing import List, Callable, Dict, Set, Tuple
+from typing import List, Callable, Dict, Tuple
 
 from pypacker.layer12 import ethernet
 from pypacker.layer3 import ip
@@ -11,25 +10,12 @@ from pypacker.pypacker import Packet
 from .utils import Layer3Conversation, BenchmarkPacket
 
 
-class PortGenerator:
-    _conversation_to_ports: Dict[Layer3Conversation, set] = defaultdict(set)
-
-    @staticmethod
-    def _generate_port(ports: Set[int]) -> int:
-        port = randint(10000, 60000)
-        while port in ports:
-            port = randint(10000, 60000)
-        ports.add(port)
-        return port
-
-    @staticmethod
-    def generate_port_pair(conversation: Layer3Conversation) -> Tuple[int, int]:
-        ports = PortGenerator._conversation_to_ports[conversation]
-        return PortGenerator._generate_port(ports), PortGenerator._generate_port(ports)
+def _generate_port() -> int:
+    return randint(10000, 60000)
 
 
-def _create_tcp_base_packets(conversation: Layer3Conversation):
-    src_port, dst_port = PortGenerator.generate_port_pair(conversation)
+def _create_tcp_base_packets(conversation: Layer3Conversation) -> Tuple[Packet, Packet]:
+    src_port, dst_port = _generate_port(), _generate_port()
     base_src_to_dst = (
         ethernet.Ethernet(
             src_s=conversation.src_mac,
@@ -52,8 +38,8 @@ def _create_tcp_base_packets(conversation: Layer3Conversation):
     return base_src_to_dst, base_dst_to_src
 
 
-def _create_udp_base_packets(conversation: Layer3Conversation):
-    src_port, dst_port = PortGenerator.generate_port_pair(conversation)
+def _create_udp_base_packets(conversation: Layer3Conversation) -> Tuple[Packet, Packet]:
+    src_port, dst_port = _generate_port(), _generate_port()
     base_src_to_dst = (
         ethernet.Ethernet(
             src_s=conversation.src_mac,
@@ -113,7 +99,7 @@ def _get_up_to_layer_3_expected_fields(packet: Packet) -> Dict[str, str]:
 
 def generate_raw_tcp_conversation(
     conversation: Layer3Conversation, conversation_length: int
-):
+) -> List[BenchmarkPacket]:
     base_src_to_dst, base_dst_to_src = _create_tcp_base_packets(conversation)
 
     def _create_packet(base_layer: Packet) -> BenchmarkPacket:
@@ -144,7 +130,7 @@ def generate_raw_tcp_conversation(
 
 def generate_raw_udp_conversation(
     conversation: Layer3Conversation, conversation_length: int
-):
+) -> List[BenchmarkPacket]:
     base_src_to_dst, base_dst_to_src = _create_udp_base_packets(conversation)
 
     def _create_packet(base_layer: Packet) -> BenchmarkPacket:
