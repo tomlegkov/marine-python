@@ -32,13 +32,14 @@ def marine_so_path() -> str:
 
 
 @pytest.fixture(scope="session")
-def marine_instance(marine_so_path):
+def marine_instance(marine_so_path: str) -> Marine:
     return Marine(marine_so_path)
 
 
 @pytest.fixture(scope="session")
-def marine_pool_instance(marine_so_path):
-    return MarinePool(marine_so_path)
+def marine_pool_instance(marine_so_path: str) -> MarinePool:
+    with MarinePool(marine_so_path) as mp:
+        yield mp
 
 
 @pytest.fixture(scope="session", params=[False, True], ids=["marine", "marine_pool"])
