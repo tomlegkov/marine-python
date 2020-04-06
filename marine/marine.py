@@ -90,6 +90,10 @@ class Marine:
         bpf = bpf.encode("utf-8")
         return bool(self._marine.validate_bpf(bpf))
 
+    def validate_display_filter(self, display_filter: str) -> bool:
+        display_filter = display_filter.encode("utf-8")
+        return bool(self._marine.validate_display_filter(display_filter))
+
     @staticmethod
     def _parse_output(output: str) -> List[str]:
         # TODO: this is a bottleneck. Find a better way to provide output from the c code
