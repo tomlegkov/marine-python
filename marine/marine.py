@@ -92,7 +92,7 @@ class Marine:
 
     def validate_display_filter(self, display_filter: str) -> bool:
         display_filter = display_filter.encode("utf-8")
-        return bool(self._marine.validate_dfilter(display_filter))
+        return bool(self._marine.validate_display_filter(display_filter))
 
     @staticmethod
     def _parse_output(output: str) -> List[str]:
