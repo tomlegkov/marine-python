@@ -128,11 +128,16 @@ class Marine:
         else:
             fields_len = 0
             fields_c_arr = None
-        err_msg = (c_char * 512)()
+        err_msg = pointer(POINTER(c_char)())
         filter_id = self._marine.marine_add_filter(
             bpf, display_filter, fields_c_arr, fields_len, err_msg
         )
-        return filter_id, err_msg.value
+        if err_msg.contents:
+            err_msg_value = string_at(err_msg.contents)
+            self._marine.public_free(err_msg.contents)
+        else:
+            err_msg_value = None
+        return filter_id, err_msg_value
 
     def __del__(self):
         self._marine.destroy_marine()
