@@ -25,6 +25,15 @@ def tcp_packet() -> bytes:
 
 
 @pytest.fixture(scope="session")
-def marine_instance() -> Marine:
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "libmarine.so")
-    return Marine(path)
+def libmarine_path() -> str:
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "libmarine.so")
+
+
+@pytest.fixture(scope="session")
+def epan_auto_reset_count() -> int:
+    return 5000
+
+
+@pytest.fixture(scope="session")
+def marine_instance(libmarine_path: str, epan_auto_reset_count: int) -> Marine:
+    return Marine(libmarine_path, epan_auto_reset_count=epan_auto_reset_count)
