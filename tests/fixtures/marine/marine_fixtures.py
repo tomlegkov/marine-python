@@ -35,5 +35,5 @@ def epan_auto_reset_count() -> int:
 
 
 @pytest.fixture(scope="session")
-def marine_instance(libmarine_path: str, epan_auto_reset_count: int) -> object:
+def marine_instance(libmarine_path: str, epan_auto_reset_count: int) -> Marine:
     return Marine(libmarine_path, epan_auto_reset_count=epan_auto_reset_count)
