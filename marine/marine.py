@@ -34,11 +34,11 @@ class Marine:
             self._marine.set_epan_auto_reset_count(epan_auto_reset_count)
 
     @property
-    def epan_auto_reset_count(self):
+    def epan_auto_reset_count(self) -> int:
         return self._marine.get_epan_auto_reset_count()
 
     @epan_auto_reset_count.setter
-    def epan_auto_reset_count(self, value):
+    def epan_auto_reset_count(self, value: int) -> None:
         self._marine.set_epan_auto_reset_count(value)
 
     def filter_and_parse(
