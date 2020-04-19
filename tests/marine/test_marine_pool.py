@@ -18,12 +18,12 @@ def generate_arp_packet(src_ip: str, target_ip: str) -> Packet:
 
 @pytest.fixture
 def passing_src_ip() -> str:
-    return '2.2.2.2'
+    return "2.2.2.2"
 
 
 @pytest.fixture
 def not_passing_src_ip() -> str:
-    return '3.3.3.3'
+    return "3.3.3.3"
 
 
 @pytest.fixture
@@ -36,8 +36,9 @@ def arp_packets(passing_src_ip: str, not_passing_src_ip: str) -> List[Packet]:
     return packets
 
 
-def test_marine_pool_preserves_order(marine_pool_instance: MarinePool, arp_packets: List[Packet],
-                                     passing_src_ip: str) -> None:
+def test_marine_pool_preserves_order(
+    marine_pool_instance: MarinePool, arp_packets: List[Packet], passing_src_ip: str
+) -> None:
     TARGET_IP_FIELD_NAME = "arp.dst.proto_ipv4"
 
     raw_packets = [packet.bin() for packet in arp_packets]

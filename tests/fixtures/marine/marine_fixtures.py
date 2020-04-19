@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import List, Union
 
@@ -32,13 +31,18 @@ def marine_so_path() -> str:
 
 
 @pytest.fixture(scope="session")
-def marine_instance(marine_so_path: str) -> Marine:
-    return Marine(marine_so_path)
+def epan_auto_reset_count() -> int:
+    return 5000
 
 
 @pytest.fixture(scope="session")
-def marine_pool_instance(marine_so_path: str) -> MarinePool:
-    with MarinePool(marine_so_path) as mp:
+def marine_instance(marine_so_path: str, epan_auto_reset_count: int) -> Marine:
+    return Marine(marine_so_path, epan_auto_reset_count=epan_auto_reset_count)
+
+
+@pytest.fixture(scope="session")
+def marine_pool_instance(marine_so_path: str, epan_auto_reset_count: int) -> MarinePool:
+    with MarinePool(marine_so_path, epan_auto_reset_count) as mp:
         yield mp
 
 
