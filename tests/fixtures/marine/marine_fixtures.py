@@ -42,12 +42,6 @@ def marine_pool_instance(marine_so_path: str) -> MarinePool:
         yield mp
 
 
-@pytest.fixture(scope="session", params=[False, True], ids=["marine", "marine_pool"])
-def marine_or_marine_pool(
-    request, marine_instance, marine_pool_instance
-) -> Union[Marine, MarinePool]:
-    use_marine_pool = request.param
-    if use_marine_pool:
-        return marine_pool_instance
-    else:
-        return marine_instance
+@pytest.fixture(scope="session", params=["marine_instance", "marine_pool_instance"])
+def marine_or_marine_pool(request) -> Union[Marine, MarinePool]:
+    return request.getfixturevalue(request.param)
