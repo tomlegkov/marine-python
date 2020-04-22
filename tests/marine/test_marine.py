@@ -336,7 +336,7 @@ def test_preferences_change_effect_while_running(
         + http.HTTP(startline=b"startline")
     )
 
-    assert marine_or_marine_pool.set_preferences("tcp.check_checksum:false") == 0
+    marine_or_marine_pool.set_preferences(["tcp.check_checksum:false"])
     # tcp.checksum.status == 2 mean unverified checksum
     expected_output = {"tcp.checksum.status": "2"}
     general_filter_and_parse_test(
@@ -348,7 +348,7 @@ def test_preferences_change_effect_while_running(
         expected_output=expected_output,
     )
 
-    assert marine_or_marine_pool.set_preferences("tcp.check_checksum:true") == 0
+    marine_or_marine_pool.set_preferences(["tcp.check_checksum:true"])
     # tcp.checksum.status == 1 mean it's a valid checksum
     expected_output = {
         "tcp.checksum.status": "1",
@@ -460,5 +460,5 @@ def test_set_epan_auto_reset_count(marine_instance: Marine):
     assert marine_instance.epan_auto_reset_count == SOME_VALUE
 
 
-def test_set_invalid_preference(marine_or_marine_pool: Union[Marine, MarinePool]):
-    assert marine_or_marine_pool.set_preferences('tcp.reznik:true') == 1
+def test_set_invalid_preference(marine_instance: Union[Marine]):
+    assert marine_instance.set_preferences(["tcp.reznik:true"]) == 1

@@ -10,21 +10,20 @@ class MarinePool:
     _marine_instance: ClassVar[Optional[Marine]] = None
 
     def __init__(
-        self, lib_path: str, epan_auto_reset_count: int, process_count: int = 4
+        self,
+        lib_path: str,
+        epan_auto_reset_count: int,
+        process_count: int = 4,
+        preferences: Optional[List[str]] = None,
     ):
+        self.pool = None
         self._lib_path = lib_path
         self._epan_auto_reset_count = epan_auto_reset_count
         self._process_count = process_count
+        self.preferences = preferences
 
     def __enter__(self):
-        ctx = multiprocessing.get_context("spawn")
-        # Using spawn so child processes won't get the already initialized marine from the parent process.
-        # We do that because initializing marine more than one time in a process causes SIGTRAP
-        self.pool = ctx.Pool(
-            self._process_count,
-            initializer=self._init_marine,
-            initargs=[self._lib_path, self._epan_auto_reset_count],
-        )
+        self._create_pool()
         return self
 
     def filter_and_parse(
@@ -44,16 +43,29 @@ class MarinePool:
             chunksize=chunk_size,
         )
 
-    def set_preferences(self, *preferences: str) -> int:
-        return self.pool.apply(self._set_preferences, preferences)
+    def set_preferences(self, preferences: List[str]) -> int:
+        # Because each process have a marine instance, and there is no way to tell each process to run
+        # the _marine_instance.set_preferences, we need to recreate the pool with the new configuration
+        self.preferences = preferences
+        self.pool.close()
+        self.pool.join()
+        self._create_pool()
+
+    def _create_pool(self):
+        ctx = multiprocessing.get_context("spawn")
+        # Using spawn so child processes won't get the already initialized marine from the parent process.
+        # We do that because initializing marine more than one time in a process causes SIGTRAP
+        self.pool = ctx.Pool(
+            self._process_count,
+            initializer=self._init_marine,
+            initargs=[self._lib_path, self._epan_auto_reset_count, self.preferences],
+        )
 
     @classmethod
-    def _set_preferences(cls, *preferences: str) -> int:
-        return cls._marine_instance.set_preferences(*preferences)
-
-    @classmethod
-    def _init_marine(cls, lib_path: str, epan_auto_reset_count: int) -> None:
-        cls._marine_instance = Marine(lib_path, epan_auto_reset_count)
+    def _init_marine(
+        cls, lib_path: str, epan_auto_reset_count: int, preferences: List[str] = None
+    ) -> None:
+        cls._marine_instance = Marine(lib_path, epan_auto_reset_count, preferences)
 
     @classmethod
     def _filter_and_parse(
