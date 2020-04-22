@@ -12,6 +12,9 @@ class MarineResult(Structure):
 MARINE_RESULT_POINTER = POINTER(MarineResult)
 
 
+MARINE_PREF_T = c_char * 1024
+
+
 class Marine:
     def __init__(self, lib_path: str, epan_auto_reset_count: Optional[int] = None):
         if not os.path.exists(lib_path):
@@ -104,6 +107,11 @@ class Marine:
     def validate_display_filter(self, display_filter: str) -> bool:
         display_filter = display_filter.encode("utf-8")
         return bool(self._marine.validate_display_filter(display_filter))
+
+    def set_preferences(self, preferences: List[str]) -> int:
+        preferences = [MARINE_PREF_T(*pref.encode("utf-8")) for pref in preferences]
+        arr = (MARINE_PREF_T * (len(preferences)))(*preferences)
+        return int(self._marine.set_preferences(arr, len(arr)))
 
     @staticmethod
     def _parse_output(output: str) -> List[str]:

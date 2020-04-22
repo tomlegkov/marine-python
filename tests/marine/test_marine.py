@@ -326,6 +326,44 @@ def test_filter_and_parse_without_fields(
     )
 
 
+def test_preferences_change_effect_while_running(
+    marine_or_marine_pool: Union[Marine, MarinePool]
+):
+    packet = (
+        ethernet.Ethernet(src_s="00:00:00:12:34:ff", dst_s="00:00:00:ff:00:1e")
+        + ip.IP(src_s="21.53.78.255", dst_s="10.0.0.255")
+        + tcp.TCP(sport=16424, dport=41799, sum=49058)
+    )
+
+    marine_or_marine_pool.set_preferences(['tcp.check_checksum:true'])
+    # tcp.checksum.status == 1 mean it's a valid checksum
+    expected_output = {
+        "tcp.checksum.status": "1",
+    }
+    general_filter_and_parse_test(
+        marine_or_marine_pool=marine_or_marine_pool,
+        packet=packet.bin(),
+        bpf_filter=None,
+        display_filter=None,
+        expected_passed=True,
+        expected_output=expected_output,
+    )
+
+    marine_or_marine_pool.set_preferences(['tcp.check_checksum:false'])
+    # tcp.checksum.status == 2 mean unverified checksum
+    expected_output = {
+        "tcp.checksum.status": "2"
+    }
+    general_filter_and_parse_test(
+        marine_or_marine_pool=marine_or_marine_pool,
+        packet=packet.bin(),
+        bpf_filter=None,
+        display_filter=None,
+        expected_passed=True,
+        expected_output=expected_output,
+    )
+
+
 def test_packet_doesnt_pass_filter_because_of_bpf(
     marine_instance: Marine,
     tcp_packet: bytes,

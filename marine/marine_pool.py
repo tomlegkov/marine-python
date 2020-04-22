@@ -44,6 +44,13 @@ class MarinePool:
             chunksize=chunk_size,
         )
 
+    def set_preferences(self, preferences: List[str]):
+        return self.pool.apply(self._set_preferences, [preferences])
+
+    @classmethod
+    def _set_preferences(cls, preferences: List[str]) -> int:
+        cls._marine_instance.set_preferences(preferences)
+
     @classmethod
     def _init_marine(cls, lib_path: str, epan_auto_reset_count: int) -> None:
         cls._marine_instance = Marine(lib_path, epan_auto_reset_count)
