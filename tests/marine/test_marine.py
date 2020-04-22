@@ -49,8 +49,8 @@ def general_filter_and_parse_test(
         {k: str(v) for k, v in expected_output.items()} if expected_output else None
     )
 
-    assert expected_passed == passed
-    assert expected_output == output
+    assert passed == expected_passed
+    assert output == expected_output
 
 
 def test_arp_packet_filter_and_parse(marine_or_marine_pool: Union[Marine, MarinePool]):
@@ -330,16 +330,15 @@ def test_preferences_change_effect_while_running(
     marine_or_marine_pool: Union[Marine, MarinePool]
 ):
     packet = (
-        ethernet.Ethernet(src_s="00:00:00:12:34:ff", dst_s="00:00:00:ff:00:1e")
-        + ip.IP(src_s="21.53.78.255", dst_s="10.0.0.255")
-        + tcp.TCP(sport=16424, dport=41799, sum=49058)
+        ethernet.Ethernet(src_s="00:00:00:00:00:00", dst_s="00:00:00:00:00:00")
+        + ip.IP(src_s="1.1.1.1", dst_s="2.2.2.2")
+        + tcp.TCP(sport=1, dport=2)
+        + http.HTTP(startline=b"startline")
     )
 
-    marine_or_marine_pool.set_preferences(['tcp.check_checksum:true'])
-    # tcp.checksum.status == 1 mean it's a valid checksum
-    expected_output = {
-        "tcp.checksum.status": "1",
-    }
+    assert marine_or_marine_pool.set_preferences("tcp.check_checksum:false") == 0
+    # tcp.checksum.status == 2 mean unverified checksum
+    expected_output = {"tcp.checksum.status": "2"}
     general_filter_and_parse_test(
         marine_or_marine_pool=marine_or_marine_pool,
         packet=packet.bin(),
@@ -349,10 +348,10 @@ def test_preferences_change_effect_while_running(
         expected_output=expected_output,
     )
 
-    marine_or_marine_pool.set_preferences(['tcp.check_checksum:false'])
-    # tcp.checksum.status == 2 mean unverified checksum
+    assert marine_or_marine_pool.set_preferences("tcp.check_checksum:true") == 0
+    # tcp.checksum.status == 1 mean it's a valid checksum
     expected_output = {
-        "tcp.checksum.status": "2"
+        "tcp.checksum.status": "1",
     }
     general_filter_and_parse_test(
         marine_or_marine_pool=marine_or_marine_pool,
@@ -459,3 +458,7 @@ def test_set_epan_auto_reset_count(marine_instance: Marine):
     assert marine_instance.epan_auto_reset_count != SOME_VALUE
     marine_instance.epan_auto_reset_count = SOME_VALUE
     assert marine_instance.epan_auto_reset_count == SOME_VALUE
+
+
+def test_set_invalid_preference(marine_or_marine_pool: Union[Marine, MarinePool]):
+    assert marine_or_marine_pool.set_preferences('tcp.reznik:true') == 1

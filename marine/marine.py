@@ -10,8 +10,6 @@ class MarineResult(Structure):
 
 
 MARINE_RESULT_POINTER = POINTER(MarineResult)
-
-
 MARINE_PREF_T = c_char * 1024
 
 
@@ -108,7 +106,7 @@ class Marine:
         display_filter = display_filter.encode("utf-8")
         return bool(self._marine.validate_display_filter(display_filter))
 
-    def set_preferences(self, preferences: List[str]) -> int:
+    def set_preferences(self, *preferences: str) -> int:
         preferences = [MARINE_PREF_T(*pref.encode("utf-8")) for pref in preferences]
         arr = (MARINE_PREF_T * (len(preferences)))(*preferences)
         return int(self._marine.set_preferences(arr, len(arr)))
