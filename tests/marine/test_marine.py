@@ -421,3 +421,13 @@ def test_set_epan_auto_reset_count(marine_instance: Marine):
     assert marine_instance.epan_auto_reset_count != SOME_VALUE
     marine_instance.epan_auto_reset_count = SOME_VALUE
     assert marine_instance.epan_auto_reset_count == SOME_VALUE
+
+
+def test_validate_fields_success(marine_instance: Marine):
+    assert marine_instance.validate_fields(["ip.src", "eth.dst"])
+
+
+def test_validate_fields_failure(marine_instance: Marine):
+    assert not marine_instance.validate_fields(
+        ["ip.src", "eth.dst", "this.field.is.bad"]
+    )

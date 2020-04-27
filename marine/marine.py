@@ -105,6 +105,12 @@ class Marine:
         display_filter = display_filter.encode("utf-8")
         return bool(self._marine.validate_display_filter(display_filter))
 
+    def validate_fields(self, fields: List[str]) -> bool:
+        fields_len = len(fields)
+        fields = [field.encode("utf-8") for field in fields]
+        fields_c_arr = (c_char_p * fields_len)(*fields)
+        return bool(self._marine.validate_fields(fields_c_arr, fields_len))
+
     @staticmethod
     def _parse_output(output: str) -> List[str]:
         # TODO: this is a bottleneck. Find a better way to provide output from the c code
