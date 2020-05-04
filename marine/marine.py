@@ -140,7 +140,7 @@ class Marine:
         )
         if err_msg.contents:
             err_msg_value = string_at(err_msg.contents)
-            self._marine.public_free(err_msg.contents)
+            self._marine.marine_free_err_msg(err_msg.contents)
         else:
             err_msg_value = None
         return filter_id, err_msg_value
