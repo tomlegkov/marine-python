@@ -105,6 +105,12 @@ class Marine:
         display_filter = display_filter.encode("utf-8")
         return bool(self._marine.validate_display_filter(display_filter))
 
+    def validate_fields(self, fields: List[str]) -> bool:
+        fields_len = len(fields)
+        fields = [field.encode("utf-8") for field in fields]
+        fields_c_arr = (c_char_p * fields_len)(*fields)
+        return bool(self._marine.validate_fields(fields_c_arr, fields_len))
+
     @staticmethod
     def _parse_output(output: str) -> List[str]:
         # TODO: this is a bottleneck. Find a better way to provide output from the c code
@@ -128,11 +134,16 @@ class Marine:
         else:
             fields_len = 0
             fields_c_arr = None
-        err_msg = (c_char * 512)()
+        err_msg = pointer(POINTER(c_char)())
         filter_id = self._marine.marine_add_filter(
             bpf, display_filter, fields_c_arr, fields_len, err_msg
         )
-        return filter_id, err_msg.value
+        if err_msg.contents:
+            err_msg_value = string_at(err_msg.contents)
+            self._marine.marine_free_err_msg(err_msg.contents)
+        else:
+            err_msg_value = None
+        return filter_id, err_msg_value
 
     def __del__(self):
         self._marine.destroy_marine()
