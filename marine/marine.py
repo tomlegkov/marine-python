@@ -42,6 +42,8 @@ class Marine:
         if epan_auto_reset_count:
             self._marine.set_epan_auto_reset_count(epan_auto_reset_count)
 
+        self._macros = {}
+
     @property
     def epan_auto_reset_count(self) -> int:
         return self._marine.get_epan_auto_reset_count()
@@ -162,3 +164,10 @@ class Marine:
     def __del__(self):
         if getattr(self, "_marine", None):
             self._marine.destroy_marine()
+
+    def add_macro(self, new_macros: Dict[str, List[str]]):
+        self._macros.update(new_macros)
+
+    def del_macro(self, macros: List[str]):
+        for macro in macros:
+            self._macros.pop(macro, None)
