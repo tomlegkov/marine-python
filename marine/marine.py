@@ -13,6 +13,9 @@ MARINE_RESULT_POINTER = POINTER(MarineResult)
 
 
 class Marine:
+    ENCAP_TYPE_ETHERNET = 1
+    ENCAP_TYPE_WIFI = 23
+
     def __init__(self, lib_path: str, epan_auto_reset_count: Optional[int] = None):
         if not os.path.exists(lib_path):
             raise ValueError(f"Marine could not be located at {lib_path}")
@@ -47,6 +50,7 @@ class Marine:
         bpf: Optional[str] = None,
         display_filter: Optional[str] = None,
         fields: Optional[list] = None,
+        encapsulation_type: int = ENCAP_TYPE_ETHERNET,
     ) -> (bool, Dict[str, str]):
         if bpf is None and display_filter is None and fields is None:
             raise ValueError(
@@ -84,7 +88,7 @@ class Marine:
 
         packet_data = self._prepare_packet_data(packet)
         marine_result = self._marine.marine_dissect_packet(
-            filter_id, packet_data, len(packet_data)
+            filter_id, packet_data, len(packet_data), encapsulation_type
         )
         success, result = False, None
         if marine_result.contents.result == 1:
