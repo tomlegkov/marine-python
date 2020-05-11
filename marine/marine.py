@@ -70,9 +70,22 @@ class Marine:
         if isinstance(display_filter, str):
             display_filter = display_filter.encode("utf-8")
 
+        macroed_fields = []
+        used_macros = []
+
         if fields is not None:
+            for field in fields:
+                if field in self._macros.keys():
+                    used_macros.append(field)
+                    macroed_fields.extend(self._macros[field])
+                else:
+                    macroed_fields.append(field)
+        else:
+            macroed_fields = None
+
+        if macroed_fields is not None:
             encoded_fields = [
-                f.encode("utf-8") if isinstance(f, str) else f for f in fields
+                f.encode("utf-8") if isinstance(f, str) else f for f in macroed_fields
             ]
         else:
             encoded_fields = None
@@ -106,7 +119,17 @@ class Marine:
                 parsed_output = self._parse_output(
                     marine_result.contents.output.decode("utf-8")
                 )
-                result = dict(zip(fields, parsed_output))
+                result = dict(zip(macroed_fields, parsed_output))
+
+        for macro in used_macros:
+            macro_value = ""
+            for value in self._macros[macro]:
+                pop_value = result.pop(value)
+                if len(pop_value) > 0:
+                    macro_value = pop_value
+
+            result[macro] = macro_value
+
         self._marine.marine_free(marine_result)
         return success, result
 
