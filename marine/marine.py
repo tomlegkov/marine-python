@@ -88,7 +88,7 @@ class Marine:
 
         packet_data = self._prepare_packet_data(packet)
         marine_result = self._marine.marine_dissect_packet(
-            filter_id, packet_data, len(packet_data), encapsulation_type
+            filter_id, packet_data, len(packet_data)
         )
         success, result = False, None
         if marine_result.contents.result == 1:
