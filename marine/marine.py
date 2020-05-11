@@ -6,6 +6,7 @@ from typing import Optional, List, Dict
 
 from marine.encap_consts import *
 
+
 class MarineResult(Structure):
     _fields_ = [("output", c_char_p), ("result", c_int)]
 
@@ -71,7 +72,7 @@ class Marine:
             bpf,
             display_filter,
             tuple(encoded_fields) if fields is not None else None,
-            encapsulation_type
+            encapsulation_type,
         )
         if filter_key in self._filters_cache:
             filter_id = self._filters_cache[filter_key]
@@ -100,7 +101,9 @@ class Marine:
         self._marine.marine_free(marine_result)
         return success, result
 
-    def validate_bpf(self, bpf: str, encapsulation_type: int = ENCAP_TYPE_ETHERNET) -> bool:
+    def validate_bpf(
+        self, bpf: str, encapsulation_type: int = ENCAP_TYPE_ETHERNET
+    ) -> bool:
         bpf = bpf.encode("utf-8")
         return bool(self._marine.validate_bpf(bpf, encapsulation_type))
 
@@ -130,7 +133,7 @@ class Marine:
         bpf: Optional[bytes] = None,
         display_filter: Optional[bytes] = None,
         fields: Optional[List[bytes]] = None,
-        encapsulation_type: int = ENCAP_TYPE_ETHERNET
+        encapsulation_type: int = ENCAP_TYPE_ETHERNET,
     ) -> (int, bytes):
         if fields is not None:
             fields_len = len(fields)
