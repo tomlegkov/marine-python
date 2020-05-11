@@ -453,14 +453,8 @@ def test_validate_bpf_success(marine_instance: Union[Marine, MarinePool]):
     assert marine_instance.validate_bpf("arp")
 
 
-def test_validate_bpf_failure_on_bpf(marine_instance: Union[Marine, MarinePool]):
+def test_validate_bpf_failure(marine_instance: Union[Marine, MarinePool]):
     assert not marine_instance.validate_bpf("what is this bpf?")
-
-
-def test_validate_bpf_failure_on_encapsulation(
-    marine_instance: Union[Marine, MarinePool]
-):
-    assert not marine_instance.validate_bpf("ethernet proto ip", ENCAP_TYPE_WIFI)
 
 
 def test_validate_display_filter_success(marine_instance: Marine):
