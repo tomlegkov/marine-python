@@ -14,9 +14,6 @@ MARINE_RESULT_POINTER = POINTER(MarineResult)
 
 
 class Marine:
-    ENCAP_TYPE_ETHERNET = 1
-    ENCAP_TYPE_WIFI = 23
-
     def __init__(self, lib_path: str, epan_auto_reset_count: Optional[int] = None):
         if not os.path.exists(lib_path):
             raise ValueError(f"Marine could not be located at {lib_path}")
