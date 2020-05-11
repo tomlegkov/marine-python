@@ -102,9 +102,9 @@ class Marine:
         self._marine.marine_free(marine_result)
         return success, result
 
-    def validate_bpf(self, bpf: str) -> bool:
+    def validate_bpf(self, bpf: str, encapsulation_type: int = ENCAP_TYPE_ETHERNET) -> bool:
         bpf = bpf.encode("utf-8")
-        return bool(self._marine.validate_bpf(bpf))
+        return bool(self._marine.validate_bpf(bpf, encapsulation_type))
 
     def validate_display_filter(self, display_filter: str) -> bool:
         display_filter = display_filter.encode("utf-8")
