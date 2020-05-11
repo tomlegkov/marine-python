@@ -11,6 +11,8 @@ from pypacker.layer4 import tcp, udp
 from pypacker.layer567 import dns, http, dhcp
 
 
+from marine.encap_consts import *
+
 # TODO: Add a test for FTP.
 
 
@@ -82,7 +84,7 @@ def test_arp_packet_filter_and_parse(marine_or_marine_pool: Union[Marine, Marine
     general_filter_and_parse_test(
         marine_or_marine_pool=marine_or_marine_pool,
         packet=packet.bin(),
-        packet_encapsulation=Marine.ENCAP_TYPE_ETHERNET,
+        packet_encapsulation=ENCAP_TYPE_ETHERNET,
         bpf_filter=bpf_filter,
         display_filter=display_filter,
         expected_passed=True,
@@ -116,7 +118,7 @@ def test_icmp_packet_filter_and_parse(marine_or_marine_pool: Union[Marine, Marin
     general_filter_and_parse_test(
         marine_or_marine_pool=marine_or_marine_pool,
         packet=packet.bin(),
-        packet_encapsulation=Marine.ENCAP_TYPE_ETHERNET,
+        packet_encapsulation=ENCAP_TYPE_ETHERNET,
         bpf_filter=bpf_filter,
         display_filter=display_filter,
         expected_passed=True,
@@ -151,7 +153,7 @@ def test_tcp_packet_filter_and_parse(marine_or_marine_pool: Union[Marine, Marine
     general_filter_and_parse_test(
         marine_or_marine_pool=marine_or_marine_pool,
         packet=packet.bin(),
-        packet_encapsulation=Marine.ENCAP_TYPE_ETHERNET,
+        packet_encapsulation=ENCAP_TYPE_ETHERNET,
         bpf_filter=bpf_filter,
         display_filter=display_filter,
         expected_passed=True,
@@ -189,7 +191,7 @@ def test_dns_packet_filter_and_parse(marine_or_marine_pool: Union[Marine, Marine
     general_filter_and_parse_test(
         marine_or_marine_pool=marine_or_marine_pool,
         packet=packet.bin(),
-        packet_encapsulation=Marine.ENCAP_TYPE_ETHERNET,
+        packet_encapsulation=ENCAP_TYPE_ETHERNET,
         bpf_filter=bpf_filter,
         display_filter=display_filter,
         expected_passed=True,
@@ -238,7 +240,7 @@ def test_dhcp_packet_filter_and_parse(marine_or_marine_pool: Union[Marine, Marin
     general_filter_and_parse_test(
         marine_or_marine_pool=marine_or_marine_pool,
         packet=packet.bin(),
-        packet_encapsulation=Marine.ENCAP_TYPE_ETHERNET,
+        packet_encapsulation=ENCAP_TYPE_ETHERNET,
         bpf_filter=bpf_filter,
         display_filter=display_filter,
         expected_passed=True,
@@ -284,7 +286,7 @@ def test_http_packet_filter_and_parse(marine_or_marine_pool: Union[Marine, Marin
     general_filter_and_parse_test(
         marine_or_marine_pool=marine_or_marine_pool,
         packet=packet.bin(),
-        packet_encapsulation=Marine.ENCAP_TYPE_ETHERNET,
+        packet_encapsulation=ENCAP_TYPE_ETHERNET,
         bpf_filter=bpf_filter,
         display_filter=display_filter,
         expected_passed=True,
@@ -308,7 +310,7 @@ def test_radiotap_packet_filter_and_parse(
     general_filter_and_parse_test(
         marine_or_marine_pool=marine_or_marine_pool,
         packet=packet.bin(),
-        packet_encapsulation=Marine.ENCAP_TYPE_WIFI,
+        packet_encapsulation=ENCAP_TYPE_WIFI,
         bpf_filter=None,
         display_filter=display_filter,
         expected_passed=True,
@@ -343,7 +345,7 @@ def test_filter_and_parse_without_filters(
     general_filter_and_parse_test(
         marine_or_marine_pool=marine_or_marine_pool,
         packet=packet.bin(),
-        packet_encapsulation=Marine.ENCAP_TYPE_ETHERNET,
+        packet_encapsulation=ENCAP_TYPE_ETHERNET,
         bpf_filter=None,
         display_filter=None,
         expected_passed=True,
@@ -357,7 +359,7 @@ def test_filter_and_parse_without_fields(
     general_filter_and_parse_test(
         marine_or_marine_pool=marine_or_marine_pool,
         packet=tcp_packet,
-        packet_encapsulation=Marine.ENCAP_TYPE_ETHERNET,
+        packet_encapsulation=ENCAP_TYPE_ETHERNET,
         bpf_filter="ip",
         display_filter="tcp",
         expected_passed=True,
@@ -373,7 +375,7 @@ def test_packet_doesnt_pass_filter_because_of_bpf(
     passed, output = filter_and_parse(
         marine_instance,
         tcp_packet,
-        Marine.ENCAP_TYPE_ETHERNET,
+        ENCAP_TYPE_ETHERNET,
         "arp",
         fields=extracted_fields_from_tcp_packet,
     )
@@ -390,7 +392,7 @@ def test_packet_doesnt_pass_filter_because_of_display_filter(
     passed, output = filter_and_parse(
         marine_instance,
         tcp_packet,
-        Marine.ENCAP_TYPE_ETHERNET,
+        ENCAP_TYPE_ETHERNET,
         display_filter="udp",
         fields=extracted_fields_from_tcp_packet,
     )
@@ -406,7 +408,7 @@ def test_illegal_bpf_in_filter_and_parse(
         filter_and_parse(
             marine_or_marine_pool,
             tcp_packet,
-            Marine.ENCAP_TYPE_ETHERNET,
+            ENCAP_TYPE_ETHERNET,
             bpf_filter="what is this bpf?",
         )
 
@@ -418,7 +420,7 @@ def test_illegal_display_filter_in_filter_and_parse(
         filter_and_parse(
             marine_or_marine_pool,
             tcp_packet,
-            Marine.ENCAP_TYPE_ETHERNET,
+            ENCAP_TYPE_ETHERNET,
             display_filter="illegal_filter",
         )
 
@@ -430,7 +432,7 @@ def test_illegal_fields_in_filter_and_parse(
         filter_and_parse(
             marine_or_marine_pool,
             tcp_packet,
-            Marine.ENCAP_TYPE_ETHERNET,
+            ENCAP_TYPE_ETHERNET,
             fields=["illegal_field_1", "illegal_field_2", "ip.src"],
         )
     err_msg = str(excinfo)
@@ -444,7 +446,7 @@ def test_filter_and_parse_with_no_parameters(
     marine_or_marine_pool: Union[Marine, MarinePool], tcp_packet: bytes
 ):
     with pytest.raises(ValueError, match="must be passed"):
-        filter_and_parse(marine_or_marine_pool, tcp_packet, Marine.ENCAP_TYPE_ETHERNET)
+        filter_and_parse(marine_or_marine_pool, tcp_packet, ENCAP_TYPE_ETHERNET)
 
 
 def test_validate_bpf_success(marine_instance: Union[Marine, MarinePool]):
@@ -458,7 +460,7 @@ def test_validate_bpf_failure_on_bpf(marine_instance: Union[Marine, MarinePool])
 def test_validate_bpf_failure_on_encapsulation(
     marine_instance: Union[Marine, MarinePool]
 ):
-    assert not marine_instance.validate_bpf("ethernet proto ip", Marine.ENCAP_TYPE_WIFI)
+    assert not marine_instance.validate_bpf("ethernet proto ip", ENCAP_TYPE_WIFI)
 
 
 def test_validate_display_filter_success(marine_instance: Marine):
