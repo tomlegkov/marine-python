@@ -73,12 +73,13 @@ class Marine:
             bpf,
             display_filter,
             tuple(encoded_fields) if fields is not None else None,
+            encapsulation_type
         )
         if filter_key in self._filters_cache:
             filter_id = self._filters_cache[filter_key]
         else:
             filter_id, err = self._add_or_get_filter(
-                bpf, display_filter, encoded_fields
+                bpf, display_filter, encoded_fields, encapsulation_type
             )
             if filter_id < 0:
                 raise ValueError(
@@ -88,7 +89,7 @@ class Marine:
 
         packet_data = self._prepare_packet_data(packet)
         marine_result = self._marine.marine_dissect_packet(
-            filter_id, packet_data, len(packet_data), encapsulation_type
+            filter_id, packet_data, len(packet_data)
         )
         success, result = False, None
         if marine_result.contents.result == 1:
@@ -131,6 +132,7 @@ class Marine:
         bpf: Optional[bytes] = None,
         display_filter: Optional[bytes] = None,
         fields: Optional[List[bytes]] = None,
+        encapsulation_type: int = ENCAP_TYPE_ETHERNET
     ) -> (int, bytes):
         if fields is not None:
             fields_len = len(fields)
@@ -140,7 +142,7 @@ class Marine:
             fields_c_arr = None
         err_msg = pointer(POINTER(c_char)())
         filter_id = self._marine.marine_add_filter(
-            bpf, display_filter, fields_c_arr, fields_len, err_msg
+            bpf, display_filter, fields_c_arr, fields_len, encapsulation_type, err_msg
         )
         if err_msg.contents:
             err_msg_value = string_at(err_msg.contents)
