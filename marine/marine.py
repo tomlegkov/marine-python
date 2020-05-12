@@ -4,7 +4,7 @@ from ctypes import *
 from io import StringIO
 from typing import Optional, List, Dict
 
-from marine.encap_consts import *
+from . import encap_consts
 
 
 class MarineResult(Structure):
@@ -49,7 +49,7 @@ class Marine:
         bpf: Optional[str] = None,
         display_filter: Optional[str] = None,
         fields: Optional[list] = None,
-        encapsulation_type: int = ENCAP_TYPE_ETHERNET,
+        encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
     ) -> (bool, Dict[str, str]):
         if bpf is None and display_filter is None and fields is None:
             raise ValueError(
@@ -102,7 +102,7 @@ class Marine:
         return success, result
 
     def validate_bpf(
-        self, bpf: str, encapsulation_type: int = ENCAP_TYPE_ETHERNET
+        self, bpf: str, encapsulation_type: int = encap_consts.ENCAP_ETHERNET
     ) -> bool:
         bpf = bpf.encode("utf-8")
         return bool(self._marine.validate_bpf(bpf, encapsulation_type))
@@ -133,7 +133,7 @@ class Marine:
         bpf: Optional[bytes] = None,
         display_filter: Optional[bytes] = None,
         fields: Optional[List[bytes]] = None,
-        encapsulation_type: int = ENCAP_TYPE_ETHERNET,
+        encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
     ) -> (int, bytes):
         if fields is not None:
             fields_len = len(fields)
