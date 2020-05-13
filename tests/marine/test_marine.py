@@ -5,7 +5,7 @@ import pytest
 from typing import List, Union, Optional, Dict
 from marine import Marine, MarinePool
 
-from pypacker.layer12 import ethernet, arp, radiotap
+from pypacker.layer12 import ethernet, arp, radiotap, ieee80211, llc
 from pypacker.layer3 import ip, icmp
 from pypacker.layer4 import tcp, udp
 from pypacker.layer567 import dns, http, dhcp
@@ -297,15 +297,28 @@ def test_http_packet_filter_and_parse(marine_or_marine_pool: Union[Marine, Marin
 def test_radiotap_packet_filter_and_parse(
     marine_or_marine_pool: Union[Marine, MarinePool]
 ):
-    packet_data = b"\x00\x00\x12\x00\x2e\x48\x00\x00\x00\x02\x6c\x09\xa0\x00\xc2\x07\x00\x00\xff\xff"
-    display_filter = "radiotap"
+    src_ip = "78.78.78.255"
+    dst_ip = "10.0.0.255"
+    display_filter = "ip"
     expected_output = {
         "radiotap.present.tsft": 0,
         "radiotap.present.channel": 1,
         "radiotap.present.rate": 1,
+        "wlan.fc.type_subtype": 40,
+        "llc.type": "0x00000800",
+        "ip.src": src_ip,
+        "ip.dst": dst_ip,
     }
 
-    packet = radiotap.Radiotap(packet_data)
+    packet = (
+        radiotap.Radiotap(present_flags=radiotap.CHANNEL_MASK + radiotap.RATE_MASK)
+        + ieee80211.IEEE80211(framectl=0x8801)
+        + ieee80211.IEEE80211.Dataframe(sec_param=None)
+        + llc.LLC(
+            dsap=170, ssap=170, ctrl=3, snap=int.to_bytes(llc.LLC_TYPE_IP, 5, "big")
+        )
+        + ip.IP(src_s=src_ip, dst_s=dst_ip)
+    )
 
     general_filter_and_parse_test(
         marine_or_marine_pool=marine_or_marine_pool,
