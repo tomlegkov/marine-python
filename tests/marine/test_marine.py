@@ -536,6 +536,12 @@ def test_validate_bpf_failure(marine_instance: Union[Marine, MarinePool]):
     assert not marine_instance.validate_bpf("what is this bpf?")
 
 
+def test_validate_bpf_failure_on_encapsulation(marine_instance: Marine):
+    bpf = "ether host 00:01:45:aa:aa:aa"
+    assert marine_instance.validate_bpf(bpf, encap_consts.ENCAP_ETHERNET)
+    assert not marine_instance.validate_bpf(bpf, 9)  # PPP encapsulation type
+
+
 def test_validate_display_filter_success(marine_instance: Marine):
     assert marine_instance.validate_display_filter("tcp")
 
