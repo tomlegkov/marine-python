@@ -16,6 +16,7 @@ class MarinePool:
         self._lib_path = lib_path
         self._epan_auto_reset_count = epan_auto_reset_count
         self._process_count = process_count
+        self._macros = {}
 
     def __enter__(self):
         ctx = multiprocessing.get_context("spawn")
@@ -39,18 +40,36 @@ class MarinePool:
         if len(packets) == 0:
             return []
 
+        if fields:
+            demacroed_fields, used_macros = Marine.replace_macros(fields, self._macros)
+        else:
+            demacroed_fields, used_macros = fields, []
+
         chunk_size = int(math.ceil(len(packets) / float(self._process_count)))
-        return self.pool.starmap(
-            self._filter_and_parse,
-            zip(
-                packets,
-                repeat(bpf),
-                repeat(display_filter),
-                repeat(fields),
-                repeat(encapsulation_type),
-            ),
-            chunksize=chunk_size,
-        )
+
+        return [
+            (result[0], Marine.restore_macros(result[1], self._macros, used_macros))
+            for result in self.pool.starmap(
+                self._filter_and_parse,
+                zip(
+                    packets,
+                    repeat(bpf),
+                    repeat(display_filter),
+                    repeat(demacroed_fields),
+                ),
+                chunksize=chunk_size,
+            )
+        ]
+
+    def set_macro(self, macro_name: str, macro_values: List[str]):
+        self._macros[macro_name] = macro_values
+
+    def remove_macro(self, macro_name: str):
+        del self._macros[macro_name]
+
+    @property
+    def macros(self):
+        return self._macros
 
     @classmethod
     def _init_marine(cls, lib_path: str, epan_auto_reset_count: int) -> None:

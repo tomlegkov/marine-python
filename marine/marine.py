@@ -2,7 +2,7 @@ import csv
 import os
 from ctypes import *
 from io import StringIO
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Tuple
 
 from . import encap_consts
 
@@ -70,22 +70,17 @@ class Marine:
         if isinstance(display_filter, str):
             display_filter = display_filter.encode("utf-8")
 
-        macroed_fields = []
+        demacroed_fields = []
         used_macros = []
 
         if fields is not None:
-            for field in fields:
-                if field in self._macros.keys():
-                    used_macros.append(field)
-                    macroed_fields.extend(self._macros[field])
-                else:
-                    macroed_fields.append(field)
+            demacroed_fields, used_macros = self.replace_macros(fields, self._macros)
         else:
-            macroed_fields = None
+            demacroed_fields = None
 
-        if macroed_fields is not None:
+        if demacroed_fields is not None:
             encoded_fields = [
-                f.encode("utf-8") if isinstance(f, str) else f for f in macroed_fields
+                f.encode("utf-8") if isinstance(f, str) else f for f in demacroed_fields
             ]
         else:
             encoded_fields = None
@@ -119,16 +114,9 @@ class Marine:
                 parsed_output = self._parse_output(
                     marine_result.contents.output.decode("utf-8")
                 )
-                result = dict(zip(macroed_fields, parsed_output))
+                result = dict(zip(demacroed_fields, parsed_output))
 
-        for macro in used_macros:
-            macro_value = ""
-            for value in self._macros[macro]:
-                pop_value = result.pop(value)
-                if len(pop_value) > 0:
-                    macro_value = pop_value
-
-            result[macro] = macro_value
+        self.restore_macros(result, self._macros, used_macros)
 
         self._marine.marine_free(marine_result)
         return success, result
@@ -144,6 +132,7 @@ class Marine:
         return bool(self._marine.validate_display_filter(display_filter))
 
     def validate_fields(self, fields: List[str]) -> bool:
+        fields, _ = self.replace_macros(fields, self._macros)
         fields_len = len(fields)
         fields = [field.encode("utf-8") for field in fields]
         fields_c_arr = (c_char_p * fields_len)(*fields)
@@ -188,9 +177,46 @@ class Marine:
         if getattr(self, "_marine", None):
             self._marine.destroy_marine()
 
-    def add_macro(self, new_macros: Dict[str, List[str]]):
-        self._macros.update(new_macros)
+    def set_macro(self, macro_name: str, macro_values: List[str]):
+        self._macros[macro_name] = macro_values
+
+    def remove_macro(self, macro_name: str):
+        del self._macros[macro_name]
+
+    def get_macros(self):
+        return self._macros
 
     def del_macro(self, macros: List[str]):
         for macro in macros:
             self._macros.pop(macro, None)
+
+    @staticmethod
+    def replace_macros(
+        fields: List[str], macros: Dict[str, List[str]]
+    ) -> Tuple[List[str], List[str]]:
+        demacroed_fields = []
+        used_macros = []
+
+        for field in fields:
+            if field in macros.keys():
+                used_macros.append(field)
+                demacroed_fields.extend(macros[field])
+            else:
+                demacroed_fields.append(field)
+
+        return demacroed_fields, used_macros
+
+    @staticmethod
+    def restore_macros(
+        result: Dict[str, str], macros: Dict[str, List[str]], used_macros: List[str]
+    ) -> Dict[str, str]:
+        for macro in used_macros:
+            macro_value = ""
+            for value in macros[macro]:
+                pop_value = result.pop(value, "")
+                if pop_value != "":
+                    macro_value = pop_value
+
+            result[macro] = macro_value
+
+        return result
