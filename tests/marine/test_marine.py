@@ -23,14 +23,15 @@ def filter_and_parse(
     bpf_filter: Optional[str] = None,
     display_filter: Optional[str] = None,
     fields: Optional[List[str]] = None,
+    macros: Optional[Dict[str, List[str]]] = None,
 ):
     return (
         marine_or_marine_pool.filter_and_parse(
-            packet, bpf_filter, display_filter, fields, packet_encapsulation
+            packet, bpf_filter, display_filter, fields, packet_encapsulation, macros
         )
         if isinstance(marine_or_marine_pool, Marine)
         else marine_or_marine_pool.filter_and_parse(
-            [packet], bpf_filter, display_filter, fields, packet_encapsulation
+            [packet], bpf_filter, display_filter, fields, packet_encapsulation, macros
         )[0]
     )
 
@@ -41,6 +42,7 @@ def general_filter_and_parse_test(
     packet_encapsulation: int,
     bpf_filter: Optional[str],
     display_filter: Optional[str],
+    macros: Optional[Dict[str, List[str]]],
     expected_passed: bool,
     expected_output: Optional[Dict[str, Union[int, str]]],
 ):
@@ -52,6 +54,7 @@ def general_filter_and_parse_test(
         bpf_filter,
         display_filter,
         expected_fields,
+        macros,
     )
 
     expected_output = (
@@ -60,11 +63,6 @@ def general_filter_and_parse_test(
 
     assert expected_passed == passed
     assert expected_output == output
-
-
-def reset_macros(marine_or_marine_pool: Union[Marine, MarinePool]):
-    for macro in list(marine_or_marine_pool.get_macros().keys()):
-        marine_or_marine_pool.remove_macro(macro)
 
 
 def test_arp_packet_filter_and_parse(marine_or_marine_pool: Union[Marine, MarinePool]):
@@ -92,6 +90,7 @@ def test_arp_packet_filter_and_parse(marine_or_marine_pool: Union[Marine, Marine
         packet_encapsulation=encap_consts.ENCAP_ETHERNET,
         bpf_filter=bpf_filter,
         display_filter=display_filter,
+        macros=None,
         expected_passed=True,
         expected_output=expected_output,
     )
@@ -126,6 +125,7 @@ def test_icmp_packet_filter_and_parse(marine_or_marine_pool: Union[Marine, Marin
         packet_encapsulation=encap_consts.ENCAP_ETHERNET,
         bpf_filter=bpf_filter,
         display_filter=display_filter,
+        macros=None,
         expected_passed=True,
         expected_output=expected_output,
     )
@@ -161,6 +161,7 @@ def test_tcp_packet_filter_and_parse(marine_or_marine_pool: Union[Marine, Marine
         packet_encapsulation=encap_consts.ENCAP_ETHERNET,
         bpf_filter=bpf_filter,
         display_filter=display_filter,
+        macros=None,
         expected_passed=True,
         expected_output=expected_output,
     )
@@ -199,6 +200,7 @@ def test_dns_packet_filter_and_parse(marine_or_marine_pool: Union[Marine, Marine
         packet_encapsulation=encap_consts.ENCAP_ETHERNET,
         bpf_filter=bpf_filter,
         display_filter=display_filter,
+        macros=None,
         expected_passed=True,
         expected_output=expected_output,
     )
@@ -248,6 +250,7 @@ def test_dhcp_packet_filter_and_parse(marine_or_marine_pool: Union[Marine, Marin
         packet_encapsulation=encap_consts.ENCAP_ETHERNET,
         bpf_filter=bpf_filter,
         display_filter=display_filter,
+        macros=None,
         expected_passed=True,
         expected_output=expected_output,
     )
@@ -294,6 +297,7 @@ def test_http_packet_filter_and_parse(marine_or_marine_pool: Union[Marine, Marin
         packet_encapsulation=encap_consts.ENCAP_ETHERNET,
         bpf_filter=bpf_filter,
         display_filter=display_filter,
+        macros=None,
         expected_passed=True,
         expected_output=expected_output,
     )
@@ -302,7 +306,6 @@ def test_http_packet_filter_and_parse(marine_or_marine_pool: Union[Marine, Marin
 def test_tcp_packet_filter_and_parse_with_macro(
     marine_or_marine_pool: Union[Marine, MarinePool]
 ):
-    reset_macros(marine_or_marine_pool)
     src_mac = "00:00:00:12:34:ff"
     dst_mac = "00:00:00:ff:00:1e"
     src_ip = "21.53.78.255"
@@ -311,7 +314,7 @@ def test_tcp_packet_filter_and_parse_with_macro(
     dst_port = 41799
     bpf_filter = "ip"
     display_filter = "tcp"
-    marine_or_marine_pool.set_macro("macro.ip.src", ["ip.src", "ipv6.src"])
+    macros = {"macro.ip.src": ["ip.src", "ipv6.src"]}
     expected_output = {
         "eth.src": src_mac,
         "eth.dst": dst_mac,
@@ -333,6 +336,7 @@ def test_tcp_packet_filter_and_parse_with_macro(
         packet_encapsulation=encap_consts.ENCAP_ETHERNET,
         bpf_filter=bpf_filter,
         display_filter=display_filter,
+        macros=macros,
         expected_passed=True,
         expected_output=expected_output,
     )
@@ -375,10 +379,10 @@ def test_radiotap_packet_filter_and_parse(
         expected_output=expected_output,
     )
 
+
 def test_tcp_packet_filter_and_parse_with_multiple_macros(
     marine_or_marine_pool: Union[Marine, MarinePool]
 ):
-    reset_macros(marine_or_marine_pool)
     src_mac = "00:00:00:12:34:ff"
     dst_mac = "00:00:00:ff:00:1e"
     src_ip = "21.53.78.255"
@@ -387,12 +391,12 @@ def test_tcp_packet_filter_and_parse_with_multiple_macros(
     dst_port = 41799
     bpf_filter = "ip"
     display_filter = "tcp"
-    marine_or_marine_pool.set_macro("macro.ip.src", ["thing1", "thing2"])
-    marine_or_marine_pool.remove_macro("macro.ip.src")
-    marine_or_marine_pool.set_macro("macro.ip.src", ["ip.src", "ipv6.src"])
-    marine_or_marine_pool.set_macro("macro.ip.dst", ["ip.dst", "ipv6.dst"])
-    marine_or_marine_pool.set_macro("macro.srcport", ["tcp.srcport", "udp.srcport"])
-    marine_or_marine_pool.set_macro("macro.dstport", ["tcp.dstport", "udp.dstport"])
+    macros = {
+        "macro.ip.src": ["ip.src", "ipv6.src"],
+        "macro.ip.dst": ["ip.dst", "ipv6.dst"],
+        "macro.srcport": ["tcp.srcport", "udp.srcport"],
+        "macro.dstport": ["tcp.dstport", "udp.dstport"],
+    }
     expected_output = {
         "eth.src": src_mac,
         "eth.dst": dst_mac,
@@ -414,6 +418,7 @@ def test_tcp_packet_filter_and_parse_with_multiple_macros(
         packet_encapsulation=encap_consts.ENCAP_ETHERNET,
         bpf_filter=bpf_filter,
         display_filter=display_filter,
+        macros=macros,
         expected_passed=True,
         expected_output=expected_output,
     )
@@ -443,6 +448,7 @@ def test_radiotap_packet_filter_and_parse_failing_wrong_encapsulation(
         packet_encapsulation=encap_consts.ENCAP_ETHERNET,
         bpf_filter=bpf_filter,
         display_filter=display_filter,
+        macros=None,
         expected_passed=False,
         expected_output={},
     )
@@ -479,6 +485,7 @@ def test_radiotap_packet_filter_and_parse_parsing_wrong_encapsulation(
         packet_encapsulation=encap_consts.ENCAP_ETHERNET,
         bpf_filter=None,
         display_filter=None,
+        macros=None,
         expected_passed=True,
         expected_output=expected_output,
     )
@@ -514,6 +521,7 @@ def test_filter_and_parse_without_filters(
         packet_encapsulation=encap_consts.ENCAP_ETHERNET,
         bpf_filter=None,
         display_filter=None,
+        macros=None,
         expected_passed=True,
         expected_output=expected_output,
     )
@@ -528,6 +536,7 @@ def test_filter_and_parse_without_fields(
         packet_encapsulation=encap_consts.ENCAP_ETHERNET,
         bpf_filter="ip",
         display_filter="tcp",
+        macros=None,
         expected_passed=True,
         expected_output=None,
     )
@@ -659,7 +668,6 @@ def test_validate_fields_failure(marine_instance: Marine):
 
 
 def test_validate_fields_with_macro(marine_instance: Marine):
-    reset_macros(marine_instance)
-    assert not marine_instance.validate_fields(["macro.ip.src"])
-    marine_instance.set_macro("macro.ip.src", ["ip.src", "ipv6.src"])
-    assert marine_instance.validate_fields(["macro.ip.src"])
+    assert marine_instance.validate_fields(
+        ["macro.ip.src"], {"macro.ip.src": ["ip.src", "ipv6.src"]}
+    )

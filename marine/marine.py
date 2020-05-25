@@ -42,8 +42,6 @@ class Marine:
         if epan_auto_reset_count:
             self._marine.set_epan_auto_reset_count(epan_auto_reset_count)
 
-        self._macros = {}
-
     @property
     def epan_auto_reset_count(self) -> int:
         return self._marine.get_epan_auto_reset_count()
@@ -59,6 +57,7 @@ class Marine:
         display_filter: Optional[str] = None,
         fields: Optional[list] = None,
         encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
+        macros: Optional[Dict[str, List[str]]] = None,
     ) -> (bool, Dict[str, str]):
         if bpf is None and display_filter is None and fields is None:
             raise ValueError(
@@ -70,11 +69,10 @@ class Marine:
         if isinstance(display_filter, str):
             display_filter = display_filter.encode("utf-8")
 
-        demacroed_fields = []
         used_macros = []
 
         if fields is not None:
-            demacroed_fields, used_macros = self.replace_macros(fields, self._macros)
+            demacroed_fields, used_macros = self.replace_macros(fields, macros)
         else:
             demacroed_fields = None
 
@@ -116,7 +114,7 @@ class Marine:
                 )
                 result = dict(zip(demacroed_fields, parsed_output))
 
-        self.restore_macros(result, self._macros, used_macros)
+        self.restore_macros(result, macros, used_macros)
 
         self._marine.marine_free(marine_result)
         return success, result
@@ -131,8 +129,10 @@ class Marine:
         display_filter = display_filter.encode("utf-8")
         return bool(self._marine.validate_display_filter(display_filter))
 
-    def validate_fields(self, fields: List[str]) -> bool:
-        fields, _ = self.replace_macros(fields, self._macros)
+    def validate_fields(
+        self, fields: List[str], macros: Optional[Dict[str, List[str]]] = None
+    ) -> bool:
+        fields, _ = self.replace_macros(fields, macros)
         fields_len = len(fields)
         fields = [field.encode("utf-8") for field in fields]
         fields_c_arr = (c_char_p * fields_len)(*fields)
@@ -177,25 +177,15 @@ class Marine:
         if getattr(self, "_marine", None):
             self._marine.destroy_marine()
 
-    def set_macro(self, macro_name: str, macro_values: List[str]):
-        self._macros[macro_name] = macro_values
-
-    def remove_macro(self, macro_name: str):
-        del self._macros[macro_name]
-
-    def get_macros(self):
-        return self._macros
-
-    def del_macro(self, macros: List[str]):
-        for macro in macros:
-            self._macros.pop(macro, None)
-
     @staticmethod
     def replace_macros(
-        fields: List[str], macros: Dict[str, List[str]]
+        fields: List[str], macros: Optional[Dict[str, List[str]]]
     ) -> Tuple[List[str], List[str]]:
         demacroed_fields = []
         used_macros = []
+
+        if not macros:
+            return fields, used_macros
 
         for field in fields:
             if field in macros.keys():
@@ -208,13 +198,13 @@ class Marine:
 
     @staticmethod
     def restore_macros(
-        result: Dict[str, str], macros: Dict[str, List[str]], used_macros: List[str]
+        result: Dict[str, str], macros: Optional[Dict[str, List[str]]], used_macros: List[str]
     ) -> Dict[str, str]:
         for macro in used_macros:
             macro_value = ""
-            for value in macros[macro]:
+            for value in macros.get(macro, []):
                 pop_value = result.pop(value, "")
-                if pop_value != "":
+                if pop_value != "" and macro_value == "":
                     macro_value = pop_value
 
             result[macro] = macro_value
