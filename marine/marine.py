@@ -15,6 +15,13 @@ MARINE_RESULT_POINTER = POINTER(MarineResult)
 
 
 class Marine:
+    SUGGESTED_MACROS = {
+        "macro.ip.src": ["ip.src", "arp.src.proto_ipv4"],
+        "macro.ip.dst": ["ip.dst", "arp.dst.proto_ipv4"],
+        "macro.src_port": ["tcp.srcport", "udp.srcpoty"],
+        "macro.dst_port": ["tcp.dstport", "udp.dstpoty"],
+    }
+
     def __init__(self, lib_path: str, epan_auto_reset_count: Optional[int] = None):
         if not os.path.exists(lib_path):
             raise ValueError(f"Marine could not be located at {lib_path}")
