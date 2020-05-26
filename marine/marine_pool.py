@@ -16,7 +16,6 @@ class MarinePool:
         self._lib_path = lib_path
         self._epan_auto_reset_count = epan_auto_reset_count
         self._process_count = process_count
-        self._macros = {}
 
     def __enter__(self):
         ctx = multiprocessing.get_context("spawn")
