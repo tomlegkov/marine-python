@@ -49,6 +49,7 @@ class MarinePool:
                 repeat(bpf),
                 repeat(display_filter),
                 repeat(fields),
+                repeat(encapsulation_type),
                 repeat(macros),
             ),
             chunksize=chunk_size,
