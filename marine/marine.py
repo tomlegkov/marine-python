@@ -50,6 +50,38 @@ class Marine:
     def epan_auto_reset_count(self, value: int) -> None:
         self._marine.set_epan_auto_reset_count(value)
 
+    def filter(
+            self,
+            packet: bytes,
+            bpf: Optional[str] = None,
+            display_filter: Optional[str] = None,
+            encapsulation_type: int = encap_consts.ENCAP_ETHERNET
+    ) -> bool:
+        passed, _ = self.filter_and_parse(
+            packet=packet,
+            bpf=bpf,
+            display_filter=display_filter,
+            encapsulation_type=encapsulation_type
+        )
+
+        return passed
+
+    def parse(
+            self,
+            packet: bytes,
+            fields: Optional[list] = None,
+            encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
+            macros: Optional[Dict[str, List[str]]] = None,
+    ) -> Dict[str, str]:
+        _, result = self.filter_and_parse(
+            packet=packet,
+            fields=fields,
+            encapsulation_type=encapsulation_type,
+            macros=macros
+        )
+
+        return result
+
     def filter_and_parse(
         self,
         packet: bytes,
