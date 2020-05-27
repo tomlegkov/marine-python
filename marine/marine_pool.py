@@ -3,7 +3,7 @@ import multiprocessing
 from itertools import repeat
 from typing import List, Dict, Optional, Tuple, ClassVar
 
-from marine import Marine
+from .marine import Marine
 from . import encap_consts
 
 

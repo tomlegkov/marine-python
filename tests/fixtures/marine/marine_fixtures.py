@@ -6,7 +6,8 @@ from pypacker.layer12 import ethernet
 from pypacker.layer3 import ip
 from pypacker.layer4 import tcp
 
-from marine import Marine, MarinePool
+from marine.marine import Marine
+from marine.marine_pool import MarinePool
 
 
 @pytest.fixture

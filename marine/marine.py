@@ -1,5 +1,6 @@
 import csv
 import os
+import sys
 from ctypes import *
 from io import StringIO
 from typing import Optional, List, Dict, Tuple
@@ -29,6 +30,9 @@ class Marine:
     }
 
     def __init__(self, lib_path: str, epan_auto_reset_count: Optional[int] = None):
+        if lib_path is None:
+            lib_path = os.path.join(sys.prefix, "lib64", "libmarine.so")
+
         if not os.path.exists(lib_path):
             raise ValueError(f"Marine could not be located at {lib_path}")
 
@@ -65,33 +69,33 @@ class Marine:
         self._marine.set_epan_auto_reset_count(value)
 
     def filter(
-            self,
-            packet: bytes,
-            bpf: Optional[str] = None,
-            display_filter: Optional[str] = None,
-            encapsulation_type: int = encap_consts.ENCAP_ETHERNET
+        self,
+        packet: bytes,
+        bpf: Optional[str] = None,
+        display_filter: Optional[str] = None,
+        encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
     ) -> bool:
         passed, _ = self.filter_and_parse(
             packet=packet,
             bpf=bpf,
             display_filter=display_filter,
-            encapsulation_type=encapsulation_type
+            encapsulation_type=encapsulation_type,
         )
 
         return passed
 
     def parse(
-            self,
-            packet: bytes,
-            fields: Optional[list] = None,
-            encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
-            macros: Optional[Dict[str, List[str]]] = None,
+        self,
+        packet: bytes,
+        fields: Optional[List[str]] = None,
+        encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
+        macros: Optional[Dict[str, List[str]]] = None,
     ) -> Dict[str, str]:
         _, result = self.filter_and_parse(
             packet=packet,
             fields=fields,
             encapsulation_type=encapsulation_type,
-            macros=macros
+            macros=macros,
         )
 
         return result
@@ -101,7 +105,7 @@ class Marine:
         packet: bytes,
         bpf: Optional[str] = None,
         display_filter: Optional[str] = None,
-        fields: Optional[list] = None,
+        fields: Optional[List[str]] = None,
         encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
         macros: Optional[Dict[str, List[str]]] = None,
     ) -> (bool, Dict[str, str]):
