@@ -18,8 +18,8 @@ class Marine:
     SUGGESTED_MACROS = {
         "macro.ip.src": ["ip.src", "arp.src.proto_ipv4"],
         "macro.ip.dst": ["ip.dst", "arp.dst.proto_ipv4"],
-        "macro.src_port": ["tcp.srcport", "udp.srcpoty"],
-        "macro.dst_port": ["tcp.dstport", "udp.dstpoty"],
+        "macro.src_port": ["tcp.srcport", "udp.srcport"],
+        "macro.dst_port": ["tcp.dstport", "udp.dstport"],
     }
 
     def __init__(self, lib_path: str, epan_auto_reset_count: Optional[int] = None):
@@ -76,10 +76,8 @@ class Marine:
         if isinstance(display_filter, str):
             display_filter = display_filter.encode("utf-8")
 
-        used_macros = []
-
         if fields is not None:
-            demacroed_fields, used_macros = self.replace_macros(fields, macros)
+            demacroed_fields = self.replace_macros(fields, macros)
         else:
             demacroed_fields = None
 
@@ -121,7 +119,8 @@ class Marine:
                 )
                 result = dict(zip(demacroed_fields, parsed_output))
 
-        self.restore_macros(result, macros, used_macros)
+        if result is not None:
+            result = self.restore_macros(result, macros, fields)
 
         self._marine.marine_free(marine_result)
         return success, result
@@ -139,7 +138,7 @@ class Marine:
     def validate_fields(
         self, fields: List[str], macros: Optional[Dict[str, List[str]]] = None
     ) -> bool:
-        fields, _ = self.replace_macros(fields, macros)
+        fields = self.replace_macros(fields, macros)
         fields_len = len(fields)
         fields = [field.encode("utf-8") for field in fields]
         fields_c_arr = (c_char_p * fields_len)(*fields)
@@ -184,36 +183,43 @@ class Marine:
         if getattr(self, "_marine", None):
             self._marine.destroy_marine()
 
-    @staticmethod
+    @classmethod
     def replace_macros(
-        fields: List[str], macros: Optional[Dict[str, List[str]]]
-    ) -> Tuple[List[str], List[str]]:
+        cls, fields: List[str], macros: Optional[Dict[str, List[str]]]
+    ) -> List[str]:
         demacroed_fields = []
-        used_macros = []
 
         if not macros:
-            return fields, used_macros
+            return fields
 
         for field in fields:
-            if field in macros.keys():
-                used_macros.append(field)
+            if field in macros:
                 demacroed_fields.extend(macros[field])
             else:
                 demacroed_fields.append(field)
 
-        return demacroed_fields, used_macros
+        return demacroed_fields
 
-    @staticmethod
+
+    @classmethod
     def restore_macros(
-        result: Dict[str, str], macros: Optional[Dict[str, List[str]]], used_macros: List[str]
+            cls, result: Dict[str, str], macros: Optional[Dict[str, List[str]]], expected_fields: List[str]
     ) -> Dict[str, str]:
-        for macro in used_macros:
-            macro_value = ""
-            for value in macros.get(macro, []):
-                pop_value = result.pop(value, "")
-                if pop_value != "" and macro_value == "":
-                    macro_value = pop_value
+        demacroed_result = {}
 
-            result[macro] = macro_value
+        for field in expected_fields:
+            demacroed_field_value = result.get(field, "")
 
-        return result
+            if not macros:
+                demacroed_result[field] = demacroed_field_value
+                continue
+
+            for possible_field in macros.get(field, []):
+                possible_value = result.get(possible_field, "")
+
+                if possible_value != "" and demacroed_field_value == "":
+                    demacroed_field_value = possible_value
+
+            demacroed_result[field] = demacroed_field_value
+
+        return demacroed_result
