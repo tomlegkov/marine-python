@@ -29,7 +29,7 @@ class Marine:
         "macro.dst_port": ["tcp.dstport", "udp.dstport"],
     }
 
-    def __init__(self, lib_path: str, epan_auto_reset_count: Optional[int] = None):
+    def __init__(self, lib_path: Optional[str] = None, epan_auto_reset_count: Optional[int] = None):
         if lib_path is None:
             lib_path = os.path.join(sys.prefix, "lib64", "libmarine.so")
 
