@@ -4,7 +4,7 @@ import pytest
 from pypacker.layer12 import ethernet, arp
 from pypacker.pypacker import Packet
 
-from marine import MarinePool
+from marine.marine_pool import MarinePool
 
 
 def generate_arp_packet(src_ip: str, target_ip: str) -> Packet:
