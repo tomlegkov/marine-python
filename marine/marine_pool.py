@@ -11,7 +11,7 @@ class MarinePool:
     _marine_instance: ClassVar[Optional[Marine]] = None
 
     def __init__(
-        self, lib_path: str, epan_auto_reset_count: int, process_count: int = 4
+        self, lib_path: Optional[str] = None, epan_auto_reset_count: Optional[int] = None, process_count: int = 4
     ):
         self._lib_path = lib_path
         self._epan_auto_reset_count = epan_auto_reset_count

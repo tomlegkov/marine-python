@@ -141,5 +141,16 @@ def validate_fields(
     Validates the given fields. Fields have the same name as specified for Wireshark.
     If you want to add a custom field, you need to have the required dissector in your Wireshark plugins folder.
     Macros can be used to expand a field - Example macro format: {"macro.ip.src" : ["ip.src", "ipv6.src"]}.
+    If not specified marine path is set to /user/lib64/libmarine.so .
     """
     return init_instance(lib_path).validate_fields(fields=fields, macros=macros)
+
+
+def get_marine(
+    lib_path: Optional[str] = None
+) -> Marine:
+    """
+    Gets the marine object at a certian path.
+    If not specified marine path is set to /user/lib64/libmarine.so .
+    """
+    return init_instance(lib_path)
