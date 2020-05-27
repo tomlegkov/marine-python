@@ -77,13 +77,13 @@ class Marine:
             display_filter = display_filter.encode("utf-8")
 
         if fields is not None:
-            demacroed_fields = self.replace_macros(fields, macros)
+            expanded_fields = self._expand_macros(fields, macros)
         else:
-            demacroed_fields = None
+            expanded_fields = None
 
-        if demacroed_fields is not None:
+        if expanded_fields is not None:
             encoded_fields = [
-                f.encode("utf-8") if isinstance(f, str) else f for f in demacroed_fields
+                f.encode("utf-8") if isinstance(f, str) else f for f in expanded_fields
             ]
         else:
             encoded_fields = None
@@ -117,10 +117,8 @@ class Marine:
                 parsed_output = self._parse_output(
                     marine_result.contents.output.decode("utf-8")
                 )
-                result = dict(zip(demacroed_fields, parsed_output))
-
-        if result is not None:
-            result = self.restore_macros(result, macros, fields)
+                result = dict(zip(expanded_fields, parsed_output))
+                result = self._collapse_macros(result, macros, fields)
 
         self._marine.marine_free(marine_result)
         return success, result
@@ -138,7 +136,7 @@ class Marine:
     def validate_fields(
         self, fields: List[str], macros: Optional[Dict[str, List[str]]] = None
     ) -> bool:
-        fields = self.replace_macros(fields, macros)
+        fields = self._expand_macros(fields, macros)
         fields_len = len(fields)
         fields = [field.encode("utf-8") for field in fields]
         fields_c_arr = (c_char_p * fields_len)(*fields)
@@ -184,42 +182,29 @@ class Marine:
             self._marine.destroy_marine()
 
     @classmethod
-    def replace_macros(
+    def _expand_macros(
         cls, fields: List[str], macros: Optional[Dict[str, List[str]]]
     ) -> List[str]:
-        demacroed_fields = []
-
         if not macros:
             return fields
 
-        for field in fields:
-            if field in macros:
-                demacroed_fields.extend(macros[field])
-            else:
-                demacroed_fields.append(field)
+        expanded_fields = [possible_field for field in fields for possible_field in macros.get(field, [field])]
 
-        return demacroed_fields
+        return expanded_fields
 
 
     @classmethod
-    def restore_macros(
+    def _collapse_macros(
             cls, result: Dict[str, str], macros: Optional[Dict[str, List[str]]], expected_fields: List[str]
     ) -> Dict[str, str]:
-        demacroed_result = {}
+        if not macros:
+            return result
+
+        collapsed_result = {}
 
         for field in expected_fields:
-            demacroed_field_value = result.get(field, "")
+            possible_fields = macros.get(field, [field])
+            possible_values = (result.get(possible_field, None) for possible_field in possible_fields)
+            collapsed_result[field] = next(filter(None, possible_values), "")
 
-            if not macros:
-                demacroed_result[field] = demacroed_field_value
-                continue
-
-            for possible_field in macros.get(field, []):
-                possible_value = result.get(possible_field, "")
-
-                if possible_value != "" and demacroed_field_value == "":
-                    demacroed_field_value = possible_value
-
-            demacroed_result[field] = demacroed_field_value
-
-        return demacroed_result
+        return collapsed_result
