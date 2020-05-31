@@ -32,6 +32,7 @@ class Marine:
             raise OSError("Could not load Marine")
 
         self._filters_cache = dict()
+        self._fields_cache = dict()
         self._marine = CDLL(lib_path)
         self._marine.marine_dissect_packet.restype = MARINE_RESULT_POINTER
         self._marine.marine_free.argtypes = [MARINE_RESULT_POINTER]
@@ -70,15 +71,17 @@ class Marine:
             display_filter = display_filter.encode("utf-8")
 
         if fields is not None:
-            expanded_fields = self._expand_macros(fields, macros)
-        else:
-            expanded_fields = None
+            if tuple(fields) in self._fields_cache:
+                expanded_fields = self._fields_cache[tuple(fields)]
+            else:
+                expanded_fields = self._expand_macros(fields, macros)
+                self._fields_cache[tuple(fields)] = expanded_fields
 
-        if expanded_fields is not None:
             encoded_fields = [
                 f.encode("utf-8") if isinstance(f, str) else f for f in expanded_fields
             ]
         else:
+            expanded_fields = None
             encoded_fields = None
 
         filter_key = (
@@ -180,14 +183,18 @@ class Marine:
         if not macros:
             return fields
 
-        expanded_fields = [possible_field for field in fields for possible_field in macros.get(field, [field])]
-
-        return expanded_fields
-
+        return [
+            possible_field
+            for field in fields
+            for possible_field in macros.get(field, [field])
+        ]
 
     @classmethod
     def _collapse_macros(
-            cls, result: Dict[str, str], macros: Optional[Dict[str, List[str]]], expected_fields: List[str]
+        cls,
+        result: Dict[str, str],
+        macros: Optional[Dict[str, List[str]]],
+        expected_fields: List[str],
     ) -> Dict[str, str]:
         if not macros:
             return result
@@ -196,7 +203,9 @@ class Marine:
 
         for field in expected_fields:
             possible_fields = macros.get(field, [field])
-            possible_values = (result.get(possible_field, None) for possible_field in possible_fields)
+            possible_values = (
+                result.get(possible_field, None) for possible_field in possible_fields
+            )
             collapsed_result[field] = next(filter(None, possible_values), "")
 
         return collapsed_result
