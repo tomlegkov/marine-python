@@ -4,6 +4,7 @@ from itertools import repeat
 from typing import List, Dict, Optional, Tuple, ClassVar
 
 from marine import Marine
+from . import encap_consts
 
 
 class MarinePool:
@@ -33,6 +34,7 @@ class MarinePool:
         bpf: Optional[str] = None,
         display_filter: Optional[str] = None,
         fields: Optional[List[str]] = None,
+        encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
     ) -> List[Tuple[bool, Dict[str, str]]]:
         if len(packets) == 0:
             return []
@@ -40,7 +42,13 @@ class MarinePool:
         chunk_size = int(math.ceil(len(packets) / float(self._process_count)))
         return self.pool.starmap(
             self._filter_and_parse,
-            zip(packets, repeat(bpf), repeat(display_filter), repeat(fields)),
+            zip(
+                packets,
+                repeat(bpf),
+                repeat(display_filter),
+                repeat(fields),
+                repeat(encapsulation_type),
+            ),
             chunksize=chunk_size,
         )
 
@@ -55,9 +63,10 @@ class MarinePool:
         bpf: Optional[str] = None,
         display_filter: Optional[str] = None,
         fields: Optional[list] = None,
+        encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
     ) -> (bool, Dict[str, str]):
         return cls._marine_instance.filter_and_parse(
-            packet, bpf, display_filter, fields
+            packet, bpf, display_filter, fields, encapsulation_type
         )
 
     def __exit__(self, exc_type, exc_val, exc_tb):

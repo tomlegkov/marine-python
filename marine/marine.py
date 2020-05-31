@@ -4,6 +4,8 @@ from ctypes import *
 from io import StringIO
 from typing import Optional, List, Dict
 
+from . import encap_consts
+
 
 class MarineResult(Structure):
     _fields_ = [("output", c_char_p), ("result", c_int)]
@@ -47,6 +49,7 @@ class Marine:
         bpf: Optional[str] = None,
         display_filter: Optional[str] = None,
         fields: Optional[list] = None,
+        encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
     ) -> (bool, Dict[str, str]):
         if bpf is None and display_filter is None and fields is None:
             raise ValueError(
@@ -69,12 +72,13 @@ class Marine:
             bpf,
             display_filter,
             tuple(encoded_fields) if fields is not None else None,
+            encapsulation_type,
         )
         if filter_key in self._filters_cache:
             filter_id = self._filters_cache[filter_key]
         else:
             filter_id, err = self._add_or_get_filter(
-                bpf, display_filter, encoded_fields
+                bpf, display_filter, encoded_fields, encapsulation_type
             )
             if filter_id < 0:
                 raise ValueError(
@@ -97,9 +101,11 @@ class Marine:
         self._marine.marine_free(marine_result)
         return success, result
 
-    def validate_bpf(self, bpf: str) -> bool:
+    def validate_bpf(
+        self, bpf: str, encapsulation_type: int = encap_consts.ENCAP_ETHERNET
+    ) -> bool:
         bpf = bpf.encode("utf-8")
-        return bool(self._marine.validate_bpf(bpf))
+        return bool(self._marine.validate_bpf(bpf, encapsulation_type))
 
     def validate_display_filter(self, display_filter: str) -> bool:
         display_filter = display_filter.encode("utf-8")
@@ -127,6 +133,7 @@ class Marine:
         bpf: Optional[bytes] = None,
         display_filter: Optional[bytes] = None,
         fields: Optional[List[bytes]] = None,
+        encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
     ) -> (int, bytes):
         if fields is not None:
             fields_len = len(fields)
@@ -136,7 +143,7 @@ class Marine:
             fields_c_arr = None
         err_msg = pointer(POINTER(c_char)())
         filter_id = self._marine.marine_add_filter(
-            bpf, display_filter, fields_c_arr, fields_len, err_msg
+            bpf, display_filter, fields_c_arr, fields_len, encapsulation_type, err_msg
         )
         if err_msg.contents:
             err_msg_value = string_at(err_msg.contents)
