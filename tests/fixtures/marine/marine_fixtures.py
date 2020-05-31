@@ -38,12 +38,12 @@ def epan_auto_reset_count() -> int:
 
 @pytest.fixture(scope="session")
 def marine_instance(marine_so_path: str, epan_auto_reset_count: int) -> Marine:
-    return Marine(marine_so_path, epan_auto_reset_count=epan_auto_reset_count)
+    return Marine(epan_auto_reset_count=epan_auto_reset_count)
 
 
 @pytest.fixture(scope="session")
 def marine_pool_instance(marine_so_path: str, epan_auto_reset_count: int) -> MarinePool:
-    with MarinePool(marine_so_path, epan_auto_reset_count) as mp:
+    with MarinePool(epan_auto_reset_count) as mp:
         yield mp
 
 

@@ -11,9 +11,8 @@ class MarinePool:
     _marine_instance: ClassVar[Optional[Marine]] = None
 
     def __init__(
-        self, lib_path: Optional[str] = None, epan_auto_reset_count: Optional[int] = None, process_count: int = 4
+        self, epan_auto_reset_count: Optional[int] = None, process_count: int = 4
     ):
-        self._lib_path = lib_path
         self._epan_auto_reset_count = epan_auto_reset_count
         self._process_count = process_count
 
@@ -24,7 +23,7 @@ class MarinePool:
         self.pool = ctx.Pool(
             self._process_count,
             initializer=self._init_marine,
-            initargs=[self._lib_path, self._epan_auto_reset_count],
+            initargs=[self._epan_auto_reset_count],
         )
         return self
 
@@ -55,8 +54,8 @@ class MarinePool:
         )
 
     @classmethod
-    def _init_marine(cls, lib_path: str, epan_auto_reset_count: int) -> None:
-        cls._marine_instance = Marine(lib_path, epan_auto_reset_count)
+    def _init_marine(cls, epan_auto_reset_count: int) -> None:
+        cls._marine_instance = Marine(epan_auto_reset_count)
 
     @classmethod
     def _filter_and_parse(

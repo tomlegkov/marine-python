@@ -5,6 +5,7 @@ from .simple_marine import (
     validate_bpf,
     validate_fields,
     validate_display_filter,
+    get_marine,
 )
 from .marine_pool import MarinePool
 from .exceptions import *

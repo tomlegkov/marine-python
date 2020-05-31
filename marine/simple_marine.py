@@ -1,30 +1,16 @@
 from .marine import Marine
 from . import encap_consts
 from typing import Optional, List, Dict, Tuple
-import sys
-import os.path
 
-marine_instance = {}
+marine_instance = None
 
 
-def init_instance(
-    lib_path: Optional[str] = None, epan_auto_reset_count: Optional[int] = None
-) -> Marine:
+def init_instance(epan_auto_reset_count: Optional[int] = None) -> Marine:
     global marine_instance
 
-    if lib_path is None:
-        lib_path = os.path.join(sys.prefix, "lib64", "libmarine.so")
-
-    if lib_path in marine_instance:
-        return marine_instance[lib_path]
-    else:
-        if (
-            len(marine_instance) > 0
-        ):  # TODO: support creation of multiple marines (issue #20)
-            raise ValueError("Only one path to marine is supported per process.")
-
-        marine_instance[lib_path] = Marine(lib_path, epan_auto_reset_count)
-        return marine_instance[lib_path]
+    if marine_instance is None:
+        marine_instance = Marine(epan_auto_reset_count)
+    return marine_instance
 
 
 def filter_packet(
@@ -32,16 +18,14 @@ def filter_packet(
     bpf: Optional[str] = None,
     display_filter: Optional[str] = None,
     encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
-    lib_path: Optional[str] = None,
 ) -> bool:
     """
     Filters a packet with BPF and a Wireshark-style display filter.
     At least one form of filtering is required.
     By default the packet is parsed as an ethernet packet,
     to view other possible encapsulation values view encap_consts.
-    If not specified marine path is set to /user/lib64/libmarine.so .
     """
-    return init_instance(lib_path).filter(
+    return init_instance().filter(
         packet=packet,
         bpf=bpf,
         display_filter=display_filter,
@@ -54,7 +38,6 @@ def parse_packet(
     fields: Optional[List[str]] = None,
     macros: Optional[Dict[str, List[str]]] = None,
     encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
-    lib_path: Optional[str] = None,
 ) -> Dict[str, str]:
     """
     Parses the given fields from the packet. Fields have the same name as specified for Wireshark.
@@ -63,9 +46,8 @@ def parse_packet(
     Macros can be used to expand a field - Example macro format: {"macro.ip.src" : ["ip.src", "ipv6.src"]}.
     By default the packet is parsed as an ethernet packet,
     to view other possible encapsulation values view encap_consts.
-    If not specified marine path is set to /user/lib64/libmarine.so .
     """
-    return init_instance(lib_path).parse(
+    return init_instance().parse(
         packet=packet,
         fields=fields,
         encapsulation_type=encapsulation_type,
@@ -80,7 +62,6 @@ def filter_and_parse_packet(
     fields: Optional[List[str]] = None,
     macros: Optional[Dict[str, List[str]]] = None,
     encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
-    lib_path: Optional[str] = None,
 ) -> Tuple[bool, Dict[str, str]]:
     """
     Filters a packet with BPF and a Wireshark-style display filter.
@@ -92,9 +73,8 @@ def filter_and_parse_packet(
     If you want to add a custom field, you need to have the required dissector in your Wireshark plugins folder.
     By default the packet is parsed as an ethernet packet,
     to view other possible encapsulation values view encap_consts.
-    If not specified marine path is set to /user/lib64/libmarine.so .
     """
-    return init_instance(lib_path).filter_and_parse(
+    return init_instance().filter_and_parse(
         packet=packet,
         bpf=bpf,
         display_filter=display_filter,
@@ -105,52 +85,36 @@ def filter_and_parse_packet(
 
 
 def validate_bpf(
-    bpf: str,
-    encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
-    lib_path: Optional[str] = None,
+    bpf: str, encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
 ) -> bool:
     """
     Validates the given BPF.
     By default the BPF is parsed with ethernet encapsulation,
     to view other possible encapsulation values view encap_consts.
-    If not specified marine path is set to /user/lib64/libmarine.so .
     """
-    return init_instance(lib_path).validate_bpf(
-        bpf=bpf, encapsulation_type=encapsulation_type
-    )
+    return init_instance().validate_bpf(bpf=bpf, encapsulation_type=encapsulation_type)
 
 
-def validate_display_filter(
-    display_filter: str, lib_path: Optional[str] = None,
-) -> bool:
+def validate_display_filter(display_filter: str) -> bool:
     """
     Validates the given display filter.
-    If not specified marine path is set to /user/lib64/libmarine.so .
     """
-    return init_instance(lib_path).validate_display_filter(
-        display_filter=display_filter
-    )
+    return init_instance().validate_display_filter(display_filter=display_filter)
 
 
 def validate_fields(
-    fields: List[str],
-    macros: Optional[Dict[str, List[str]]] = None,
-    lib_path: Optional[str] = None,
+    fields: List[str], macros: Optional[Dict[str, List[str]]] = None,
 ) -> bool:
     """
     Validates the given fields. Fields have the same name as specified for Wireshark.
     If you want to add a custom field, you need to have the required dissector in your Wireshark plugins folder.
     Macros can be used to expand a field - Example macro format: {"macro.ip.src" : ["ip.src", "ipv6.src"]}.
-    If not specified marine path is set to /user/lib64/libmarine.so .
     """
-    return init_instance(lib_path).validate_fields(fields=fields, macros=macros)
+    return init_instance().validate_fields(fields=fields, macros=macros)
 
 
-def get_marine(
-    lib_path: Optional[str] = None
-) -> Marine:
+def get_marine() -> Marine:
     """
-    Gets the marine object at a certian path.
-    If not specified marine path is set to /user/lib64/libmarine.so .
+    Gets the used marine object.
     """
-    return init_instance(lib_path)
+    return init_instance()
