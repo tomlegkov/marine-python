@@ -27,6 +27,7 @@ class Marine:
         "macro.src_port": ["tcp.srcport", "udp.srcport"],
         "macro.dst_port": ["tcp.dstport", "udp.dstport"],
     }
+    WIFI_RADIO_PROTOCOLS = ["radiotap", "wlan", "wlan_radio"]
 
     def __init__(self, epan_auto_reset_count: Optional[int] = None):
         try:
@@ -68,7 +69,7 @@ class Marine:
         packet: bytes,
         bpf: Optional[str] = None,
         display_filter: Optional[str] = None,
-        encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
+        encapsulation_type: Optional[int] = None,
     ) -> bool:
         passed, _ = self.filter_and_parse(
             packet=packet,
@@ -83,7 +84,7 @@ class Marine:
         self,
         packet: bytes,
         fields: Optional[List[str]] = None,
-        encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
+        encapsulation_type: Optional[int] = None,
         macros: Optional[Dict[str, List[str]]] = None,
     ) -> Dict[str, str]:
         _, result = self.filter_and_parse(
@@ -101,7 +102,7 @@ class Marine:
         bpf: Optional[str] = None,
         display_filter: Optional[str] = None,
         fields: Optional[List[str]] = None,
-        encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
+        encapsulation_type: Optional[int] = None,
         macros: Optional[Dict[str, List[str]]] = None,
     ) -> (bool, Dict[str, str]):
         if bpf is None and display_filter is None and fields is None:
@@ -258,3 +259,14 @@ class Marine:
             ret_value = tuple(zip(*expanded_with_indices))
             self._macros_cache[macro_key] = ret_value
             return ret_value
+
+    def _detect_encap(self, fields: List[str]) -> int:
+        fields_protocols = (field.split(".")[0].lower() for field in fields)
+        if [
+            protocol
+            for protocol in fields_protocols
+            if protocol in self.WIFI_RADIO_PROTOCOLS
+        ]:
+            return encap_consts.ENCAP_IEEE_802_11_RADIOTAP
+
+        return encap_consts.ENCAP_ETHERNET

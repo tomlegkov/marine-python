@@ -1,5 +1,4 @@
 from .marine import Marine
-from . import encap_consts
 from typing import Optional, List, Dict, Tuple
 
 marine_instance = None
@@ -17,7 +16,7 @@ def filter_packet(
     packet: bytes,
     bpf: Optional[str] = None,
     display_filter: Optional[str] = None,
-    encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
+    encapsulation_type: Optional[int] = None,
 ) -> bool:
     """
     Filters a packet with BPF and a Wireshark-style display filter.
@@ -37,7 +36,7 @@ def parse_packet(
     packet: bytes,
     fields: Optional[List[str]] = None,
     macros: Optional[Dict[str, List[str]]] = None,
-    encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
+    encapsulation_type: Optional[int] = None,
 ) -> Dict[str, str]:
     """
     Parses the given fields from the packet. Fields have the same name as specified for Wireshark.
@@ -61,7 +60,7 @@ def filter_and_parse_packet(
     display_filter: Optional[str] = None,
     fields: Optional[List[str]] = None,
     macros: Optional[Dict[str, List[str]]] = None,
-    encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
+    encapsulation_type: Optional[int] = None,
 ) -> Tuple[bool, Dict[str, str]]:
     """
     Filters a packet with BPF and a Wireshark-style display filter.
@@ -84,9 +83,7 @@ def filter_and_parse_packet(
     )
 
 
-def validate_bpf(
-    bpf: str, encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
-) -> bool:
+def validate_bpf(bpf: str, encapsulation_type: Optional[int] = None,) -> bool:
     """
     Validates the given BPF.
     By default the BPF is parsed with ethernet encapsulation,
