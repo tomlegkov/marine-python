@@ -1,6 +1,4 @@
 import csv
-import os
-import sys
 from ctypes import *
 from io import StringIO
 from typing import Optional, List, Dict
@@ -13,6 +11,7 @@ class MarineResult(Structure):
 
 
 MARINE_RESULT_POINTER = POINTER(MarineResult)
+MARINE_NAME = "libmarine.so"
 
 
 class Marine:
@@ -23,20 +22,16 @@ class Marine:
         "macro.dst_port": ["tcp.dstport", "udp.dstport"],
     }
 
-    def __init__(self, lib_path: Optional[str] = None, epan_auto_reset_count: Optional[int] = None):
-        if lib_path is None:
-            lib_path = os.path.join(sys.prefix, "lib64", "libmarine.so")
-
-        if not os.path.exists(lib_path):
-            raise ValueError(f"Marine could not be located at {lib_path}")
-
+    def __init__(self, epan_auto_reset_count: Optional[int] = None):
         try:
-            cdll.LoadLibrary(lib_path)
+            cdll.LoadLibrary(MARINE_NAME)
         except Exception:
-            raise OSError("Could not load Marine")
+            raise OSError(
+                "Could not load Marine. Please make sure you have put marine in LD_LIBRARY_PATH."
+            )
 
         self._filters_cache = dict()
-        self._marine = CDLL(lib_path)
+        self._marine = CDLL(MARINE_NAME)
         self._marine.marine_dissect_packet.restype = MARINE_RESULT_POINTER
         self._marine.marine_free.argtypes = [MARINE_RESULT_POINTER]
         return_code = self._marine.init_marine()
@@ -213,11 +208,13 @@ class Marine:
         if not macros:
             return fields
 
-        return list({
-            possible_field: 0
-            for field in fields
-            for possible_field in macros.get(field, [field])
-        })
+        return list(
+            {
+                possible_field: 0
+                for field in fields
+                for possible_field in macros.get(field, [field])
+            }
+        )
 
     @classmethod
     def _collapse_macros(
