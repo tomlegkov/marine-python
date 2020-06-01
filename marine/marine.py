@@ -2,7 +2,7 @@ import csv
 import os
 from ctypes import *
 from io import StringIO
-from typing import Optional, List, Dict, Tuple
+from typing import Optional, List, Dict
 
 from . import encap_consts
 
@@ -32,7 +32,6 @@ class Marine:
             raise OSError("Could not load Marine")
 
         self._filters_cache = dict()
-        self._fields_cache = dict()
         self._marine = CDLL(lib_path)
         self._marine.marine_dissect_packet.restype = MARINE_RESULT_POINTER
         self._marine.marine_free.argtypes = [MARINE_RESULT_POINTER]
@@ -78,12 +77,7 @@ class Marine:
             display_filter = display_filter.encode("utf-8")
 
         if fields is not None:
-            if tuple(fields) in self._fields_cache:
-                expanded_fields = self._fields_cache[tuple(fields)]
-            else:
-                expanded_fields = self._expand_macros(fields, macros)
-                self._fields_cache[tuple(fields)] = expanded_fields
-
+            expanded_fields = self._expand_macros(fields, macros)
             encoded_fields = [
                 f.encode("utf-8") if isinstance(f, str) else f for f in expanded_fields
             ]
@@ -191,11 +185,11 @@ class Marine:
         if not macros:
             return fields
 
-        return [
-            possible_field
+        return list({
+            possible_field: 0
             for field in fields
             for possible_field in macros.get(field, [field])
-        ]
+        })
 
     @classmethod
     def _collapse_macros(
