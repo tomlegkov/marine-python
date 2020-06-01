@@ -20,7 +20,7 @@ from marine import encap_consts
 def filter_and_parse(
     marine_or_marine_pool: Union[Marine, MarinePool],
     packet: bytes,
-    packet_encapsulation: int,
+    packet_encapsulation: Optional[int],
     bpf_filter: Optional[str] = None,
     display_filter: Optional[str] = None,
     fields: Optional[List[str]] = None,
@@ -40,7 +40,7 @@ def filter_and_parse(
 def general_filter_and_parse_test(
     marine_or_marine_pool: Union[Marine, MarinePool],
     packet: bytes,
-    packet_encapsulation: int,
+    packet_encapsulation: Optional[int],
     bpf_filter: Optional[str],
     display_filter: Optional[str],
     macros: Optional[Dict[str, List[str]]],
@@ -533,6 +533,83 @@ def test_radiotap_packet_filter_and_parse_parsing_wrong_encapsulation(
         packet_encapsulation=encap_consts.ENCAP_ETHERNET,
         bpf_filter=None,
         display_filter=None,
+        macros=None,
+        expected_passed=True,
+        expected_output=expected_output,
+    )
+
+
+def test_tcp_packet_filter_and_parse_with_auto_encap(
+    marine_or_marine_pool: Union[Marine, MarinePool]
+):
+    src_mac = "00:00:00:12:34:ff"
+    dst_mac = "00:00:00:ff:00:1e"
+    src_ip = "21.53.78.255"
+    dst_ip = "10.0.0.255"
+    src_port = 16424
+    dst_port = 41799
+    bpf_filter = "ip"
+    display_filter = "tcp"
+    expected_output = {
+        "eth.src": src_mac,
+        "eth.dst": dst_mac,
+        "ip.src": src_ip,
+        "ip.dst": dst_ip,
+        "tcp.srcport": src_port,
+        "tcp.dstport": dst_port,
+    }
+
+    packet = (
+        ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
+        + ip.IP(src_s=src_ip, dst_s=dst_ip)
+        + tcp.TCP(sport=src_port, dport=dst_port)
+    )
+
+    general_filter_and_parse_test(
+        marine_or_marine_pool=marine_or_marine_pool,
+        packet=packet.bin(),
+        packet_encapsulation=None,
+        bpf_filter=bpf_filter,
+        display_filter=display_filter,
+        macros=None,
+        expected_passed=True,
+        expected_output=expected_output,
+    )
+
+
+def test_radiotap_packet_filter_and_parse_with_auto_encap(
+    marine_or_marine_pool: Union[Marine, MarinePool]
+):
+    src_ip = "78.78.78.255"
+    dst_ip = "10.0.0.255"
+    bpf_filter = "ip"
+    display_filter = "ip"
+    expected_output = {
+        "radiotap.present.tsft": 0,
+        "radiotap.present.channel": 1,
+        "radiotap.present.rate": 1,
+        "wlan.fc.type_subtype": 40,
+        "llc.type": "0x00000800",
+        "ip.src": src_ip,
+        "ip.dst": dst_ip,
+    }
+
+    packet = (
+        radiotap.Radiotap(present_flags=radiotap.CHANNEL_MASK + radiotap.RATE_MASK)
+        + ieee80211.IEEE80211(framectl=0x8801)
+        + ieee80211.IEEE80211.Dataframe(sec_param=None)
+        + llc.LLC(
+            dsap=170, ssap=170, ctrl=3, snap=int.to_bytes(llc.LLC_TYPE_IP, 5, "big")
+        )
+        + ip.IP(src_s=src_ip, dst_s=dst_ip)
+    )
+
+    general_filter_and_parse_test(
+        marine_or_marine_pool=marine_or_marine_pool,
+        packet=packet.bin(),
+        packet_encapsulation=None,
+        bpf_filter=bpf_filter,
+        display_filter=display_filter,
         macros=None,
         expected_passed=True,
         expected_output=expected_output,

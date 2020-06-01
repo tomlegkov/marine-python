@@ -101,6 +101,9 @@ class Marine:
         if isinstance(display_filter, str):
             display_filter = display_filter.encode("utf-8")
 
+        if encapsulation_type is None:
+            encapsulation_type = self._detect_encap(fields)
+
         if fields is not None:
             expanded_fields = self._expand_macros(fields, macros)
             encoded_fields = [
