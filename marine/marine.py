@@ -172,7 +172,7 @@ class Marine:
         # TODO: this is a bottleneck. Find a better way to provide output from the c code
         f = StringIO(output)
         csv_parsed_output = next(csv.reader(f, delimiter="\t", quotechar='"'))
-        return csv_parsed_output
+        return [value if len(value) > 0 else None for value in csv_parsed_output]
 
     @staticmethod
     def _prepare_packet_data(packet: bytes):
@@ -237,7 +237,7 @@ class Marine:
             possible_values = (
                 result.get(possible_field, None) for possible_field in possible_fields
             )
-            collapsed_result[field] = next(filter(None, possible_values), "")
+            collapsed_result[field] = next(filter(None, possible_values), None)
 
         return collapsed_result
 
