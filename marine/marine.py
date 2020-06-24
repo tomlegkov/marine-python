@@ -157,9 +157,8 @@ class Marine:
                 raise UnknownInternalException(err)
             self._filters_cache[filter_key] = filter_id
 
-        packet_data = self._prepare_packet_data(packet)
         marine_result = self._marine.marine_dissect_packet(
-            filter_id, packet_data, len(packet_data)
+            filter_id, packet, len(packet)
         )
         success, result = False, None
         if marine_result.contents.result == 1:
@@ -198,10 +197,6 @@ class Marine:
         f = StringIO(output)
         csv_parsed_output = next(csv.reader(f, delimiter="\t", quotechar='"'), [""])
         return [value if len(value) > 0 else None for value in csv_parsed_output]
-
-    @staticmethod
-    def _prepare_packet_data(packet: bytes):
-        return (c_ubyte * len(packet)).from_buffer_copy(packet)
 
     def _add_or_get_filter(
         self,
