@@ -6,6 +6,8 @@ from typing import Optional, List, Dict
 
 from . import encap_consts
 
+MARINE_ALREADY_INITIALIZED_ERROR_CODE = -2
+
 
 class MarineResult(Structure):
     _fields_ = [("output", c_char_p), ("result", c_int)]
@@ -30,6 +32,8 @@ class Marine:
         self._marine.marine_free.argtypes = [MARINE_RESULT_POINTER]
         return_code = self._marine.init_marine()
         if return_code < 0:
+            if return_code == MARINE_ALREADY_INITIALIZED_ERROR_CODE:
+                raise RuntimeError("Marine is already initialized")
             raise RuntimeError("Could not initialize Marine")
 
         if epan_auto_reset_count:
