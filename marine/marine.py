@@ -153,5 +153,5 @@ class Marine:
         return filter_id, err_msg_value
 
     def __del__(self):
-        if hasattr(self, '_marine') and self._marine:
+        if getattr(self, "_marine"):
             self._marine.destroy_marine()
