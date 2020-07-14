@@ -30,6 +30,13 @@ class Marine:
         self._marine.marine_free.argtypes = [MARINE_RESULT_POINTER]
         return_code = self._marine.init_marine()
         if return_code < 0:
+            if (
+                return_code
+                == c_int.in_dll(
+                    self._marine, "MARINE_ALREADY_INITIALIZED_ERROR_CODE"
+                ).value
+            ):
+                raise RuntimeError("Marine is already initialized")
             raise RuntimeError("Could not initialize Marine")
 
         if epan_auto_reset_count:
