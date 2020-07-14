@@ -4,6 +4,11 @@ from ctypes import *
 from io import StringIO
 from typing import Optional, List, Dict
 
+from marine.exceptions import (
+    BadBPFException,
+    BadDisplayFilterException,
+    InvalidFieldException,
+)
 from . import encap_consts
 
 
@@ -81,9 +86,13 @@ class Marine:
                 bpf, display_filter, encoded_fields, encapsulation_type
             )
             if filter_id < 0:
-                raise ValueError(
-                    err
-                )  # TODO: create custom exception for every error type
+                if filter_id == -1:
+                    raise BadBPFException(err)
+                elif filter_id == -2:
+                    raise BadDisplayFilterException(err)
+                elif filter_id == -3:
+                    raise InvalidFieldException(err)
+                raise ValueError(err)
             self._filters_cache[filter_key] = filter_id
 
         packet_data = self._prepare_packet_data(packet)
