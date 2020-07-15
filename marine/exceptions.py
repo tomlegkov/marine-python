@@ -8,3 +8,7 @@ class BadDisplayFilterException(Exception):
 
 class InvalidFieldException(Exception):
     pass
+
+
+class UnknownInternalException(Exception):
+    pass

@@ -4,10 +4,11 @@ from ctypes import *
 from io import StringIO
 from typing import Optional, List, Dict
 
-from marine.exceptions import (
+from .exceptions import (
     BadBPFException,
     BadDisplayFilterException,
     InvalidFieldException,
+    UnknownInternalException,
 )
 from . import encap_consts
 
@@ -86,13 +87,19 @@ class Marine:
                 bpf, display_filter, encoded_fields, encapsulation_type
             )
             if filter_id < 0:
-                if filter_id == -1:
+                if filter_id == c_int.in_dll(self._marine, "BadBPFErrorCode").value:
                     raise BadBPFException(err)
-                elif filter_id == -2:
+                elif (
+                    filter_id
+                    == c_int.in_dll(self._marine, "BadDisplayFilterErrorCode").value
+                ):
                     raise BadDisplayFilterException(err)
-                elif filter_id == -3:
+                elif (
+                    filter_id
+                    == c_int.in_dll(self._marine, "InvalidFieldErrorCode").value
+                ):
                     raise InvalidFieldException(err)
-                raise ValueError(err)
+                raise UnknownInternalException(err)
             self._filters_cache[filter_key] = filter_id
 
         packet_data = self._prepare_packet_data(packet)
