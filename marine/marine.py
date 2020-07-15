@@ -87,16 +87,16 @@ class Marine:
                 bpf, display_filter, encoded_fields, encapsulation_type
             )
             if filter_id < 0:
-                if filter_id == c_int.in_dll(self._marine, "BadBPFErrorCode").value:
+                if filter_id == c_int.in_dll(self._marine, "BAD_BPF_ERROR_CODE").value:
                     raise BadBPFException(err)
                 elif (
                     filter_id
-                    == c_int.in_dll(self._marine, "BadDisplayFilterErrorCode").value
+                    == c_int.in_dll(self._marine, "BAD_DISPLAY_FILTER_ERROR_CODE").value
                 ):
                     raise BadDisplayFilterException(err)
                 elif (
                     filter_id
-                    == c_int.in_dll(self._marine, "InvalidFieldErrorCode").value
+                    == c_int.in_dll(self._marine, "INVALID_FIELD_ERROR_CODE").value
                 ):
                     raise InvalidFieldException(err)
                 raise UnknownInternalException(err)
