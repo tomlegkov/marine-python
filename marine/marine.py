@@ -2,7 +2,7 @@ import csv
 import os
 from ctypes import *
 from io import StringIO
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Tuple
 
 from . import encap_consts
 
@@ -32,6 +32,7 @@ class Marine:
             raise OSError("Could not load Marine")
 
         self._filters_cache = dict()
+        self._macros_cache = dict()
         self._marine = CDLL(lib_path)
         self._marine.marine_dissect_packet.restype = MARINE_RESULT_POINTER
         self._marine.marine_free.argtypes = [MARINE_RESULT_POINTER]
@@ -77,12 +78,12 @@ class Marine:
             display_filter = display_filter.encode("utf-8")
 
         if fields is not None:
-            expanded_fields = self._expand_macros(fields, macros)
+            expanded_fields, macro_indices = self._expand_macros(fields, macros)
             encoded_fields = [
                 f.encode("utf-8") if isinstance(f, str) else f for f in expanded_fields
             ]
         else:
-            expanded_fields = None
+            expanded_fields, macro_indices = None, None
             encoded_fields = None
 
         filter_key = (
@@ -90,12 +91,13 @@ class Marine:
             display_filter,
             tuple(encoded_fields) if fields is not None else None,
             encapsulation_type,
+            tuple(macro_indices) if fields is not None else None
         )
         if filter_key in self._filters_cache:
             filter_id = self._filters_cache[filter_key]
         else:
             filter_id, err = self._add_or_get_filter(
-                bpf, display_filter, encoded_fields, encapsulation_type
+                bpf, display_filter, encoded_fields, macro_indices, encapsulation_type
             )
             if filter_id < 0:
                 raise ValueError(
@@ -114,8 +116,7 @@ class Marine:
                 parsed_output = self._parse_output(
                     marine_result.contents.output.decode("utf-8")
                 )
-                result = dict(zip(expanded_fields, parsed_output))
-                result = self._collapse_macros(result, macros, fields)
+                result = dict(zip(fields, parsed_output))
 
         self._marine.marine_free(marine_result)
         return success, result
@@ -133,7 +134,7 @@ class Marine:
     def validate_fields(
         self, fields: List[str], macros: Optional[Dict[str, List[str]]] = None
     ) -> bool:
-        fields = self._expand_macros(fields, macros)
+        fields, macro_indices = self._expand_macros(fields, macros)
         fields_len = len(fields)
         fields = [field.encode("utf-8") for field in fields]
         fields_c_arr = (c_char_p * fields_len)(*fields)
@@ -155,17 +156,20 @@ class Marine:
         bpf: Optional[bytes] = None,
         display_filter: Optional[bytes] = None,
         fields: Optional[List[bytes]] = None,
+        macro_indices: Optional[List[int]] = None,
         encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
     ) -> (int, bytes):
         if fields is not None:
             fields_len = len(fields)
             fields_c_arr = (c_char_p * fields_len)(*fields)
+            macro_indices_c_arr = (c_int * fields_len)(*macro_indices)
         else:
             fields_len = 0
             fields_c_arr = None
+            macro_indices_c_arr = None
         err_msg = pointer(POINTER(c_char)())
         filter_id = self._marine.marine_add_filter(
-            bpf, display_filter, fields_c_arr, fields_len, encapsulation_type, err_msg
+            bpf, display_filter, fields_c_arr, macro_indices_c_arr, fields_len, encapsulation_type, err_msg
         )
         if err_msg.contents:
             err_msg_value = string_at(err_msg.contents)
@@ -178,18 +182,27 @@ class Marine:
         if getattr(self, "_marine", None):
             self._marine.destroy_marine()
 
-    @classmethod
     def _expand_macros(
-        cls, fields: List[str], macros: Optional[Dict[str, List[str]]]
-    ) -> List[str]:
+        self, fields: List[str], macros: Optional[Dict[str, List[str]]]
+    ) -> Tuple[Tuple[str], Tuple[int]]:
         if not macros:
-            return fields
+            return tuple(fields), (0,) * len(fields)
 
-        return list({
-            possible_field: 0
-            for field in fields
-            for possible_field in macros.get(field, [field])
-        })
+        macro_key = (
+            tuple(fields),
+            frozenset({key: tuple(value) for key, value in macros.items()})
+        )
+        if macro_key in self._macros_cache:
+            return self._macros_cache[macro_key]
+        else:
+            expanded_with_indices = [
+                (possible_field, len(macros.get(field, [field])) - index - 1)
+                for field in fields
+                for index, possible_field in enumerate(macros.get(field, [field]))
+            ]
+            ret_value = tuple(zip(*expanded_with_indices))
+            self._macros_cache[macro_key] = ret_value
+            return ret_value
 
     @classmethod
     def _collapse_macros(
