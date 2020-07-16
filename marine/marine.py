@@ -90,8 +90,8 @@ class Marine:
             bpf,
             display_filter,
             tuple(encoded_fields) if fields is not None else None,
+            tuple(macro_indices) if fields is not None else None,
             encapsulation_type,
-            tuple(macro_indices) if fields is not None else None
         )
         if filter_key in self._filters_cache:
             filter_id = self._filters_cache[filter_key]
@@ -169,7 +169,13 @@ class Marine:
             macro_indices_c_arr = None
         err_msg = pointer(POINTER(c_char)())
         filter_id = self._marine.marine_add_filter(
-            bpf, display_filter, fields_c_arr, macro_indices_c_arr, fields_len, encapsulation_type, err_msg
+            bpf,
+            display_filter,
+            fields_c_arr,
+            macro_indices_c_arr,
+            fields_len,
+            encapsulation_type,
+            err_msg,
         )
         if err_msg.contents:
             err_msg_value = string_at(err_msg.contents)
@@ -190,7 +196,7 @@ class Marine:
 
         macro_key = (
             tuple(fields),
-            frozenset({key: tuple(value) for key, value in macros.items()})
+            frozenset({key: tuple(value) for key, value in macros.items()}),
         )
         if macro_key in self._macros_cache:
             return self._macros_cache[macro_key]
@@ -203,24 +209,3 @@ class Marine:
             ret_value = tuple(zip(*expanded_with_indices))
             self._macros_cache[macro_key] = ret_value
             return ret_value
-
-    @classmethod
-    def _collapse_macros(
-        cls,
-        result: Dict[str, str],
-        macros: Optional[Dict[str, List[str]]],
-        expected_fields: List[str],
-    ) -> Dict[str, str]:
-        if not macros:
-            return result
-
-        collapsed_result = {}
-
-        for field in expected_fields:
-            possible_fields = macros.get(field, [field])
-            possible_values = (
-                result.get(possible_field, None) for possible_field in possible_fields
-            )
-            collapsed_result[field] = next(filter(None, possible_values), "")
-
-        return collapsed_result
