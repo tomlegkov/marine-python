@@ -198,7 +198,7 @@ class Marine:
 
         macro_key = (
             tuple(fields),
-            frozenset({key: tuple(value) for key, value in macros.items()}.items()),
+            frozenset((key, tuple(value)) for key, value in macros.items()),
         )
         if macro_key in self._macros_cache:
             return self._macros_cache[macro_key]
