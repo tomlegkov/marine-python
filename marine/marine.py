@@ -134,7 +134,7 @@ class Marine:
     def validate_fields(
         self, fields: List[str], macros: Optional[Dict[str, List[str]]] = None
     ) -> bool:
-        fields, macro_indices = self._expand_macros(fields, macros)
+        fields, _ = self._expand_macros(fields, macros)
         fields_len = len(fields)
         fields = [field.encode("utf-8") for field in fields]
         fields_c_arr = (c_char_p * fields_len)(*fields)
