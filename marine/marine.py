@@ -90,7 +90,7 @@ class Marine:
             bpf,
             display_filter,
             tuple(encoded_fields) if fields is not None else None,
-            tuple(macro_indices) if fields is not None else None,
+            tuple(macro_indices) if macro_indices is not None else None,
             encapsulation_type,
         )
         if filter_key in self._filters_cache:
@@ -162,11 +162,13 @@ class Marine:
         if fields is not None:
             fields_len = len(fields)
             fields_c_arr = (c_char_p * fields_len)(*fields)
-            macro_indices_c_arr = (c_int * fields_len)(*macro_indices)
         else:
             fields_len = 0
             fields_c_arr = None
-            macro_indices_c_arr = None
+
+        macro_indices_c_arr = (
+            (c_int * fields_len)(*macro_indices) if macro_indices is not None else None
+        )
         err_msg = pointer(POINTER(c_char)())
         filter_id = self._marine.marine_add_filter(
             bpf,
@@ -190,21 +192,21 @@ class Marine:
 
     def _expand_macros(
         self, fields: List[str], macros: Optional[Dict[str, List[str]]]
-    ) -> Tuple[Tuple[str], Tuple[int]]:
+    ) -> Tuple[Tuple[str, ...], Optional[Tuple[int, ...]]]:
         if not macros:
-            return tuple(fields), (0,) * len(fields)
+            return tuple(fields), None
 
         macro_key = (
             tuple(fields),
-            frozenset({key: tuple(value) for key, value in macros.items()}),
+            frozenset({key: tuple(value) for key, value in macros.items()}.items()),
         )
         if macro_key in self._macros_cache:
             return self._macros_cache[macro_key]
         else:
             expanded_with_indices = [
-                (possible_field, len(macros.get(field, [field])) - index - 1)
-                for field in fields
-                for index, possible_field in enumerate(macros.get(field, [field]))
+                (possible_field, macro_id)
+                for macro_id, field in enumerate(fields)
+                for possible_field in macros.get(field, [field])
             ]
             ret_value = tuple(zip(*expanded_with_indices))
             self._macros_cache[macro_key] = ret_value
