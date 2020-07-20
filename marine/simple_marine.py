@@ -37,7 +37,7 @@ def parse_packet(
     fields: Optional[List[str]] = None,
     macros: Optional[Dict[str, List[str]]] = None,
     encapsulation_type: Optional[int] = None,
-) -> Dict[str, str]:
+) -> Dict[str, Optional[str]]:
     """
     Parses the given fields from the packet. Fields have the same name as specified for Wireshark.
     If you want to add a custom field, you need to have the required dissector in your Wireshark plugins folder.
@@ -61,7 +61,7 @@ def filter_and_parse_packet(
     fields: Optional[List[str]] = None,
     macros: Optional[Dict[str, List[str]]] = None,
     encapsulation_type: Optional[int] = None,
-) -> Tuple[bool, Dict[str, str]]:
+) -> Tuple[bool, Dict[str, Optional[str]]]:
     """
     Filters a packet with BPF and a Wireshark-style display filter.
     If the filter passes, parses the packet according to the fields.
