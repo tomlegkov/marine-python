@@ -27,7 +27,7 @@ class Marine:
         "macro.src_port": ["tcp.srcport", "udp.srcport"],
         "macro.dst_port": ["tcp.dstport", "udp.dstport"],
     }
-    WIFI_RADIO_PROTOCOLS = ["radiotap", "wlan", "wlan_radio"]
+    WIFI_RADIO_PROTOCOLS = frozenset(["radiotap", "wlan", "wlan_radio"])
 
     def __init__(self, epan_auto_reset_count: Optional[int] = None):
         try:
@@ -264,12 +264,8 @@ class Marine:
             return ret_value
 
     def _detect_encap(self, fields: List[str]) -> int:
-        fields_protocols = (field.split(".")[0].lower() for field in fields)
-        if [
-            protocol
-            for protocol in fields_protocols
-            if protocol in self.WIFI_RADIO_PROTOCOLS
-        ]:
+        fields_protocols = set(field.split(".")[0].lower() for field in fields)
+        if fields_protocols.intersection(self.WIFI_RADIO_PROTOCOLS):
             return encap_consts.ENCAP_IEEE_802_11_RADIOTAP
 
         return encap_consts.ENCAP_ETHERNET

@@ -888,3 +888,17 @@ def test_validate_fields_with_macro(marine_instance: Marine):
     assert marine_instance.validate_fields(
         ["macro.ip.src"], {"macro.ip.src": ["ip.src", "ipv6.src"]}
     )
+
+
+def test_auto_encap_ethernet(marine_instance: Marine):
+    assert (
+        marine_instance._detect_encap(["ip.src", "ip.dst"])
+        == encap_consts.ENCAP_ETHERNET
+    )
+
+
+def test_auto_encap_wireless(marine_instance: Marine):
+    assert (
+        marine_instance._detect_encap(["ip.src", "ip.dst", "radiotap.channel"])
+        == encap_consts.ENCAP_IEEE_802_11_RADIOTAP
+    )
