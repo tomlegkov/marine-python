@@ -177,7 +177,9 @@ def benchmark_bpf_and_display_filter_and_8_fields(packets: List[BenchmarkPacket]
 
 
 @benchmark_wrapper
-def benchmark_bpf_and_display_filter_and_8_fields_auto_detection(packets: List[BenchmarkPacket]):
+def benchmark_bpf_and_display_filter_and_8_fields_auto_detection(
+    packets: List[BenchmarkPacket],
+):
     for packet in packets:
         passed, result = marine_instance.filter_and_parse(
             packet.packet,
