@@ -12,6 +12,7 @@ from pypacker.layer567 import dns, http, dhcp
 
 
 from marine import encap_consts
+from marine import BadBPFException, BadDisplayFilterException, InvalidFieldException
 
 # TODO: Add a test for FTP.
 
@@ -483,7 +484,7 @@ def test_packet_doesnt_pass_filter_because_of_display_filter(
 def test_illegal_bpf_in_filter_and_parse(
     marine_or_marine_pool: Union[Marine, MarinePool], tcp_packet: bytes
 ):
-    with pytest.raises(ValueError, match="Failed compiling the BPF"):
+    with pytest.raises(BadBPFException, match="Failed compiling the BPF"):
         filter_and_parse(
             marine_or_marine_pool,
             tcp_packet,
@@ -495,7 +496,9 @@ def test_illegal_bpf_in_filter_and_parse(
 def test_illegal_display_filter_in_filter_and_parse(
     marine_or_marine_pool: Union[Marine, MarinePool], tcp_packet: bytes
 ):
-    with pytest.raises(ValueError, match="neither a field nor a protocol name"):
+    with pytest.raises(
+        BadDisplayFilterException, match="neither a field nor a protocol name"
+    ):
         filter_and_parse(
             marine_or_marine_pool,
             tcp_packet,
@@ -507,7 +510,7 @@ def test_illegal_display_filter_in_filter_and_parse(
 def test_illegal_fields_in_filter_and_parse(
     marine_or_marine_pool: Union[Marine, MarinePool], tcp_packet: bytes
 ):
-    with pytest.raises(ValueError) as excinfo:
+    with pytest.raises(InvalidFieldException) as excinfo:
         filter_and_parse(
             marine_or_marine_pool,
             tcp_packet,
