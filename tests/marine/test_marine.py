@@ -386,6 +386,95 @@ def test_tcp_packet_filter_and_parse_with_multiple_macros(
     )
 
 
+def test_tcp_packet_filter_and_parse_with_multiple_different_macros(
+    marine_or_marine_pool: Union[Marine, MarinePool]
+):
+    src_mac = "00:00:00:12:34:ff"
+    dst_mac = "00:00:00:ff:00:1e"
+    src_ip = "21.53.78.255"
+    dst_ip = "10.0.0.255"
+    src_port = 16424
+    dst_port = 41799
+    bpf_filter = "ip"
+    display_filter = "tcp"
+    first_macros = {
+        "macro.ip.src": ["ip.src", "ipv6.src"],
+        "macro.ip.dst": ["ip.dst", "ipv6.dst"],
+    }
+    second_macros = {
+        "macro.ip.src": ["ip.src", "ipv6.src"],
+        "macro.ip.dst": ["ip.dst", "ipv6.dst"],
+        "macro.srcport": ["tcp.srcport", "udp.srcport"],
+        "macro.dstport": ["tcp.dstport", "udp.dstport"],
+    }
+    third_macros = {
+        "macro.ip.src": ["ip.src", "ipv6.src"],
+        "macro.ip.dst": ["ip.dst", "ipv6.dst"],
+        "macro.dstport": ["tcp.dstport", "udp.dstport"],
+    }
+    first_expected_output = {
+        "eth.src": src_mac,
+        "eth.dst": dst_mac,
+        "macro.ip.src": src_ip,
+        "macro.ip.dst": dst_ip,
+        "tcp.srcport": src_port,
+        "tcp.dstport": dst_port,
+    }
+    second_expected_output = {
+        "eth.src": src_mac,
+        "eth.dst": dst_mac,
+        "macro.ip.src": src_ip,
+        "macro.ip.dst": dst_ip,
+        "macro.srcport": src_port,
+        "macro.dstport": dst_port,
+    }
+    third_expected_output = {
+        "eth.src": src_mac,
+        "eth.dst": dst_mac,
+        "macro.ip.src": src_ip,
+        "macro.ip.dst": dst_ip,
+        "tcp.srcport": src_port,
+        "macro.dstport": dst_port,
+    }
+
+    packet = (
+        ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
+        + ip.IP(src_s=src_ip, dst_s=dst_ip)
+        + tcp.TCP(sport=src_port, dport=dst_port)
+    )
+
+    general_filter_and_parse_test(
+        marine_or_marine_pool=marine_or_marine_pool,
+        packet=packet.bin(),
+        packet_encapsulation=encap_consts.ENCAP_ETHERNET,
+        bpf_filter=bpf_filter,
+        display_filter=display_filter,
+        macros=first_macros,
+        expected_passed=True,
+        expected_output=first_expected_output,
+    )
+    general_filter_and_parse_test(
+        marine_or_marine_pool=marine_or_marine_pool,
+        packet=packet.bin(),
+        packet_encapsulation=encap_consts.ENCAP_ETHERNET,
+        bpf_filter=bpf_filter,
+        display_filter=display_filter,
+        macros=second_macros,
+        expected_passed=True,
+        expected_output=second_expected_output,
+    )
+    general_filter_and_parse_test(
+        marine_or_marine_pool=marine_or_marine_pool,
+        packet=packet.bin(),
+        packet_encapsulation=encap_consts.ENCAP_ETHERNET,
+        bpf_filter=bpf_filter,
+        display_filter=display_filter,
+        macros=third_macros,
+        expected_passed=True,
+        expected_output=third_expected_output,
+    )
+
+
 def test_tcp_packet_filter_and_parse_with_multiple_macros_sharing_fields(
     marine_or_marine_pool: Union[Marine, MarinePool]
 ):
