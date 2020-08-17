@@ -35,6 +35,7 @@ class MarinePool:
         display_filter: Optional[str] = None,
         fields: Optional[List[str]] = None,
         encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
+        macros: Optional[Dict[str, List[str]]] = None,
     ) -> List[Tuple[bool, Dict[str, str]]]:
         if len(packets) == 0:
             return []
@@ -48,6 +49,7 @@ class MarinePool:
                 repeat(display_filter),
                 repeat(fields),
                 repeat(encapsulation_type),
+                repeat(macros),
             ),
             chunksize=chunk_size,
         )
@@ -64,9 +66,10 @@ class MarinePool:
         display_filter: Optional[str] = None,
         fields: Optional[list] = None,
         encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
+        macros: Optional[Dict[str, List[str]]] = None,
     ) -> (bool, Dict[str, str]):
         return cls._marine_instance.filter_and_parse(
-            packet, bpf, display_filter, fields, encapsulation_type
+            packet, bpf, display_filter, fields, encapsulation_type, macros
         )
 
     def __exit__(self, exc_type, exc_val, exc_tb):
