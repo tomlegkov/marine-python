@@ -39,6 +39,7 @@ class Marine:
 
         self._filters_cache = dict()
         self._macros_cache = dict()
+        self._encap_cache = dict()
         self._marine = CDLL(MARINE_NAME)
         self._marine.marine_dissect_packet.restype = MARINE_RESULT_POINTER
         self._marine.marine_free.argtypes = [MARINE_RESULT_POINTER]
@@ -264,8 +265,14 @@ class Marine:
             return ret_value
 
     def _detect_encap(self, fields: List[str]) -> int:
-        fields_protocols = set(field.split(".")[0].lower() for field in fields)
+        encap_key = tuple(fields)
+        if encap_key in self._encap_cache:
+            return self._encap_cache[encap_key]
+
+        fields_protocols = frozenset(field.split(".")[0].lower() for field in fields)
         if fields_protocols.intersection(self.WIFI_RADIO_PROTOCOLS):
+            self._encap_cache[encap_key] = encap_consts.ENCAP_IEEE_802_11_RADIOTAP
             return encap_consts.ENCAP_IEEE_802_11_RADIOTAP
 
+        self._encap_cache[encap_key] = encap_consts.ENCAP_ETHERNET
         return encap_consts.ENCAP_ETHERNET
