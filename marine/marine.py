@@ -1,5 +1,4 @@
 import csv
-import os
 from ctypes import *
 from io import StringIO
 from typing import Optional, List, Dict, Tuple
@@ -18,6 +17,7 @@ class MarineResult(Structure):
 
 
 MARINE_RESULT_POINTER = POINTER(MarineResult)
+MARINE_NAME = "libmarine.so"
 
 
 class Marine:
@@ -28,18 +28,17 @@ class Marine:
         "macro.dst_port": ["tcp.dstport", "udp.dstport"],
     }
 
-    def __init__(self, lib_path: str, epan_auto_reset_count: Optional[int] = None):
-        if not os.path.exists(lib_path):
-            raise ValueError(f"Marine could not be located at {lib_path}")
-
+    def __init__(self, epan_auto_reset_count: Optional[int] = None):
         try:
-            cdll.LoadLibrary(lib_path)
+            cdll.LoadLibrary(MARINE_NAME)
         except Exception:
-            raise OSError("Could not load Marine")
+            raise OSError(
+                "Could not load Marine. Please make sure you have put marine in LD_LIBRARY_PATH."
+            )
 
         self._filters_cache = dict()
         self._macros_cache = dict()
-        self._marine = CDLL(lib_path)
+        self._marine = CDLL(MARINE_NAME)
         self._marine.marine_dissect_packet.restype = MARINE_RESULT_POINTER
         self._marine.marine_free.argtypes = [MARINE_RESULT_POINTER]
         return_code = self._marine.init_marine()
@@ -64,12 +63,44 @@ class Marine:
     def epan_auto_reset_count(self, value: int) -> None:
         self._marine.set_epan_auto_reset_count(value)
 
+    def filter(
+        self,
+        packet: bytes,
+        bpf: Optional[str] = None,
+        display_filter: Optional[str] = None,
+        encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
+    ) -> bool:
+        passed, _ = self.filter_and_parse(
+            packet=packet,
+            bpf=bpf,
+            display_filter=display_filter,
+            encapsulation_type=encapsulation_type,
+        )
+
+        return passed
+
+    def parse(
+        self,
+        packet: bytes,
+        fields: Optional[List[str]] = None,
+        encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
+        macros: Optional[Dict[str, List[str]]] = None,
+    ) -> Dict[str, str]:
+        _, result = self.filter_and_parse(
+            packet=packet,
+            fields=fields,
+            encapsulation_type=encapsulation_type,
+            macros=macros,
+        )
+
+        return result
+
     def filter_and_parse(
         self,
         packet: bytes,
         bpf: Optional[str] = None,
         display_filter: Optional[str] = None,
-        fields: Optional[list] = None,
+        fields: Optional[List[str]] = None,
         encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
         macros: Optional[Dict[str, List[str]]] = None,
     ) -> (bool, Dict[str, str]):

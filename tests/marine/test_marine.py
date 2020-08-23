@@ -3,7 +3,8 @@ Note: in order to run the tests, you must put libmarine.so next to the marine_fi
 """
 import pytest
 from typing import List, Union, Optional, Dict
-from marine import Marine, MarinePool
+from marine.marine import Marine
+from marine.marine_pool import MarinePool
 
 from pypacker.layer12 import ethernet, arp, radiotap, ieee80211, llc
 from pypacker.layer3 import ip, icmp
