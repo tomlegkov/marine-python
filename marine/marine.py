@@ -37,6 +37,7 @@ class Marine:
             )
 
         self._filters_cache = dict()
+        self._macros_cache = dict()
         self._marine = CDLL(MARINE_NAME)
         self._marine.marine_dissect_packet.restype = MARINE_RESULT_POINTER
         self._marine.marine_free.argtypes = [MARINE_RESULT_POINTER]
