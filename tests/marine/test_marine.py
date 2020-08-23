@@ -706,6 +706,42 @@ def test_radiotap_packet_filter_and_parse_with_auto_encap(
     )
 
 
+def test_radiotap_packet_filter_and_parse_with_auto_encap_in_macro(
+    marine_or_marine_pool: Union[Marine, MarinePool]
+):
+    src_ip = "78.78.78.255"
+    dst_ip = "10.0.0.255"
+    bpf_filter = "ip"
+    display_filter = "ip"
+    macros = {"macro.dummy": ["radiotap.present.rate"]}
+    expected_output = {
+        "macro.dummy": 1,
+        "ip.src": src_ip,
+        "ip.dst": dst_ip,
+    }
+
+    packet = (
+        radiotap.Radiotap(present_flags=radiotap.CHANNEL_MASK + radiotap.RATE_MASK)
+        + ieee80211.IEEE80211(framectl=0x8801)
+        + ieee80211.IEEE80211.Dataframe(sec_param=None)
+        + llc.LLC(
+            dsap=170, ssap=170, ctrl=3, snap=int.to_bytes(llc.LLC_TYPE_IP, 5, "big")
+        )
+        + ip.IP(src_s=src_ip, dst_s=dst_ip)
+    )
+
+    general_filter_and_parse_test(
+        marine_or_marine_pool=marine_or_marine_pool,
+        packet=packet.bin(),
+        packet_encapsulation=None,
+        bpf_filter=bpf_filter,
+        display_filter=display_filter,
+        macros=macros,
+        expected_passed=True,
+        expected_output=expected_output,
+    )
+
+
 def test_filter_and_parse_without_filters(
     marine_or_marine_pool: Union[Marine, MarinePool]
 ):

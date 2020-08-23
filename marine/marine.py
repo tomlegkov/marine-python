@@ -116,9 +116,6 @@ class Marine:
         if isinstance(display_filter, str):
             display_filter = display_filter.encode("utf-8")
 
-        if encapsulation_type is None:
-            encapsulation_type = self._detect_encap(fields)
-
         if fields is not None:
             expanded_fields, macro_indices = self._expand_macros(fields, macros)
             encoded_fields = [
@@ -127,6 +124,9 @@ class Marine:
         else:
             expanded_fields, macro_indices = None, None
             encoded_fields = None
+
+        if encapsulation_type is None:
+            encapsulation_type = self._detect_encap(expanded_fields)
 
         filter_key = (
             bpf,
@@ -265,7 +265,7 @@ class Marine:
             return ret_value
 
     def _detect_encap(self, fields: List[str]) -> int:
-        encap_key = tuple(fields)
+        encap_key = frozenset(fields)
         if encap_key in self._encap_cache:
             return self._encap_cache[encap_key]
 
