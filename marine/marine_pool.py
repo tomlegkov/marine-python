@@ -4,7 +4,6 @@ from itertools import repeat
 from typing import List, Dict, Optional, Tuple, ClassVar
 
 from .marine import Marine
-from . import encap_consts
 
 
 class MarinePool:
@@ -33,7 +32,7 @@ class MarinePool:
         bpf: Optional[str] = None,
         display_filter: Optional[str] = None,
         fields: Optional[List[str]] = None,
-        encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
+        encapsulation_type: Optional[int] = None,
         macros: Optional[Dict[str, List[str]]] = None,
     ) -> List[Tuple[bool, Dict[str, str]]]:
         if len(packets) == 0:
@@ -64,7 +63,7 @@ class MarinePool:
         bpf: Optional[str] = None,
         display_filter: Optional[str] = None,
         fields: Optional[list] = None,
-        encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
+        encapsulation_type: Optional[int] = None,
         macros: Optional[Dict[str, List[str]]] = None,
     ) -> (bool, Dict[str, str]):
         return cls._marine_instance.filter_and_parse(

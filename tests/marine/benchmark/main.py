@@ -33,7 +33,7 @@ from typing import List, Callable, Dict
 
 import psutil
 
-from marine import Marine
+from marine import Marine, encap_consts
 from .benchmark_generator import generate_packets
 from .utils import BenchmarkPacket
 
@@ -91,7 +91,9 @@ Started with {start_used_memory:.2f} MB, ended with {end_used_memory:.2f}. Delta
 def benchmark_bpf(packets: List[BenchmarkPacket]):
     for packet in packets:
         passed, result = marine_instance.filter_and_parse(
-            packet.packet, bpf=packet.good_bpf
+            packet.packet,
+            bpf=packet.good_bpf,
+            encapsulation_type=encap_consts.ENCAP_ETHERNET,
         )
         assert passed
         assert result is None
@@ -101,7 +103,9 @@ def benchmark_bpf(packets: List[BenchmarkPacket]):
 def benchmark_display_filter(packets: List[BenchmarkPacket]):
     for packet in packets:
         passed, result = marine_instance.filter_and_parse(
-            packet.packet, display_filter=packet.good_display_filter
+            packet.packet,
+            display_filter=packet.good_display_filter,
+            encapsulation_type=encap_consts.ENCAP_ETHERNET,
         )
         assert passed
         assert result is None
@@ -114,6 +118,7 @@ def benchmark_bpf_and_display_filter(packets: List[BenchmarkPacket]):
             packet.packet,
             bpf=packet.good_bpf,
             display_filter=packet.good_display_filter,
+            encapsulation_type=encap_consts.ENCAP_ETHERNET,
         )
         assert passed
         assert result is None
@@ -123,7 +128,9 @@ def benchmark_bpf_and_display_filter(packets: List[BenchmarkPacket]):
 def benchmark_3_fields(packets: List[BenchmarkPacket]):
     for packet in packets:
         passed, result = marine_instance.filter_and_parse(
-            packet.packet, fields=packet.fields_to_extract[:3]
+            packet.packet,
+            fields=packet.fields_to_extract[:3],
+            encapsulation_type=encap_consts.ENCAP_ETHERNET,
         )
         assert passed
         assert create_3_expected_fields(packet) == result
@@ -133,7 +140,9 @@ def benchmark_3_fields(packets: List[BenchmarkPacket]):
 def benchmark_8_fields(packets: List[BenchmarkPacket]):
     for packet in packets:
         passed, result = marine_instance.filter_and_parse(
-            packet.packet, fields=packet.fields_to_extract
+            packet.packet,
+            fields=packet.fields_to_extract,
+            encapsulation_type=encap_consts.ENCAP_ETHERNET,
         )
         assert passed
         assert packet.expected_parse_result == result
@@ -147,6 +156,7 @@ def benchmark_bpf_and_display_filter_and_3_fields(packets: List[BenchmarkPacket]
             bpf=packet.good_bpf,
             display_filter=packet.good_display_filter,
             fields=packet.fields_to_extract[:3],
+            encapsulation_type=encap_consts.ENCAP_ETHERNET,
         )
         assert passed
         assert create_3_expected_fields(packet) == result
@@ -154,6 +164,22 @@ def benchmark_bpf_and_display_filter_and_3_fields(packets: List[BenchmarkPacket]
 
 @benchmark_wrapper
 def benchmark_bpf_and_display_filter_and_8_fields(packets: List[BenchmarkPacket]):
+    for packet in packets:
+        passed, result = marine_instance.filter_and_parse(
+            packet.packet,
+            bpf=packet.good_bpf,
+            display_filter=packet.good_display_filter,
+            fields=packet.fields_to_extract,
+            encapsulation_type=encap_consts.ENCAP_ETHERNET,
+        )
+        assert passed
+        assert packet.expected_parse_result == result
+
+
+@benchmark_wrapper
+def benchmark_bpf_and_display_filter_and_8_fields_auto_detection(
+    packets: List[BenchmarkPacket],
+):
     for packet in packets:
         passed, result = marine_instance.filter_and_parse(
             packet.packet,
@@ -176,6 +202,7 @@ def benchmark_bpf_and_display_filter_and_8_fields_with_macros(
             display_filter=packet.good_display_filter,
             fields=packet.fields_to_extract,
             macros=Marine.SUGGESTED_MACROS,
+            encapsulation_type=encap_consts.ENCAP_ETHERNET,
         )
         assert passed
         assert packet.expected_parse_result == result

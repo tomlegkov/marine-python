@@ -27,6 +27,7 @@ class Marine:
         "macro.src_port": ["tcp.srcport", "udp.srcport"],
         "macro.dst_port": ["tcp.dstport", "udp.dstport"],
     }
+    WIFI_RADIO_PROTOCOLS = frozenset(["radiotap", "wlan", "wlan_radio"])
 
     def __init__(self, epan_auto_reset_count: Optional[int] = None):
         try:
@@ -38,6 +39,7 @@ class Marine:
 
         self._filters_cache = dict()
         self._macros_cache = dict()
+        self._encap_cache = dict()
         self._marine = CDLL(MARINE_NAME)
         self._marine.marine_dissect_packet.restype = MARINE_RESULT_POINTER
         self._marine.marine_free.argtypes = [MARINE_RESULT_POINTER]
@@ -68,7 +70,7 @@ class Marine:
         packet: bytes,
         bpf: Optional[str] = None,
         display_filter: Optional[str] = None,
-        encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
+        encapsulation_type: Optional[int] = None,
     ) -> bool:
         passed, _ = self.filter_and_parse(
             packet=packet,
@@ -83,7 +85,7 @@ class Marine:
         self,
         packet: bytes,
         fields: Optional[List[str]] = None,
-        encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
+        encapsulation_type: Optional[int] = None,
         macros: Optional[Dict[str, List[str]]] = None,
     ) -> Dict[str, str]:
         _, result = self.filter_and_parse(
@@ -101,7 +103,7 @@ class Marine:
         bpf: Optional[str] = None,
         display_filter: Optional[str] = None,
         fields: Optional[List[str]] = None,
-        encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
+        encapsulation_type: Optional[int] = None,
         macros: Optional[Dict[str, List[str]]] = None,
     ) -> (bool, Dict[str, str]):
         if bpf is None and display_filter is None and fields is None:
@@ -122,6 +124,9 @@ class Marine:
         else:
             expanded_fields, macro_indices = None, None
             encoded_fields = None
+
+        if encapsulation_type is None:
+            encapsulation_type = self._detect_encap(expanded_fields)
 
         filter_key = (
             bpf,
@@ -258,3 +263,16 @@ class Marine:
             ret_value = tuple(zip(*expanded_with_indices))
             self._macros_cache[macro_key] = ret_value
             return ret_value
+
+    def _detect_encap(self, fields: List[str]) -> int:
+        encap_key = frozenset(fields)
+        if encap_key in self._encap_cache:
+            return self._encap_cache[encap_key]
+
+        fields_protocols = frozenset(field.split(".")[0].lower() for field in fields)
+        if fields_protocols.intersection(self.WIFI_RADIO_PROTOCOLS):
+            self._encap_cache[encap_key] = encap_consts.ENCAP_IEEE_802_11_RADIOTAP
+            return encap_consts.ENCAP_IEEE_802_11_RADIOTAP
+
+        self._encap_cache[encap_key] = encap_consts.ENCAP_ETHERNET
+        return encap_consts.ENCAP_ETHERNET
