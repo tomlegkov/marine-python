@@ -46,7 +46,7 @@ def general_filter_and_parse_test(
     display_filter: Optional[str],
     macros: Optional[Dict[str, List[str]]],
     expected_passed: bool,
-    expected_output: Optional[Dict[str, Union[int, str]]],
+    expected_output: Optional[Dict[str, Optional[Union[int, str]]]],
 ):
     expected_fields = list(expected_output.keys()) if expected_output else None
     passed, output = filter_and_parse(
@@ -60,7 +60,9 @@ def general_filter_and_parse_test(
     )
 
     expected_output = (
-        {k: str(v) for k, v in expected_output.items()} if expected_output else None
+        {k: str(v) if v is not None else v for k, v in expected_output.items()}
+        if expected_output
+        else None
     )
 
     assert expected_passed == passed
@@ -598,13 +600,13 @@ def test_radiotap_packet_filter_and_parse_parsing_wrong_encapsulation(
     src_ip = "78.78.78.255"
     dst_ip = "10.0.0.255"
     expected_output = {
-        "radiotap.present.tsft": "",
-        "radiotap.present.channel": "",
-        "radiotap.present.rate": "",
-        "wlan.fc.type_subtype": "",
-        "llc.type": "",
-        "ip.src": "",
-        "ip.dst": "",
+        "radiotap.present.tsft": None,
+        "radiotap.present.channel": None,
+        "radiotap.present.rate": None,
+        "wlan.fc.type_subtype": None,
+        "llc.type": None,
+        "ip.src": None,
+        "ip.dst": None,
     }
 
     packet = (

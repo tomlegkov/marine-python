@@ -197,7 +197,7 @@ class Marine:
         # TODO: this is a bottleneck. Find a better way to provide output from the c code
         f = StringIO(output)
         csv_parsed_output = next(csv.reader(f, delimiter="\t", quotechar='"'))
-        return csv_parsed_output
+        return [value if len(value) > 0 else None for value in csv_parsed_output]
 
     @staticmethod
     def _prepare_packet_data(packet: bytes):
