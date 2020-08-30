@@ -87,7 +87,7 @@ class Marine:
         fields: Optional[List[str]] = None,
         encapsulation_type: Optional[int] = None,
         macros: Optional[Dict[str, List[str]]] = None,
-    ) -> Dict[str, str]:
+    ) -> Dict[str, Optional[str]]:
         _, result = self.filter_and_parse(
             packet=packet,
             fields=fields,
@@ -105,7 +105,7 @@ class Marine:
         fields: Optional[List[str]] = None,
         encapsulation_type: Optional[int] = None,
         macros: Optional[Dict[str, List[str]]] = None,
-    ) -> (bool, Dict[str, str]):
+    ) -> (bool, Dict[str, Optional[str]]):
         if bpf is None and display_filter is None and fields is None:
             raise ValueError(
                 "At least one form of dissection must be passed to the function"
@@ -157,9 +157,8 @@ class Marine:
                 raise UnknownInternalException(err)
             self._filters_cache[filter_key] = filter_id
 
-        packet_data = self._prepare_packet_data(packet)
         marine_result = self._marine.marine_dissect_packet(
-            filter_id, packet_data, len(packet_data)
+            filter_id, packet, len(packet)
         )
         success, result = False, None
         if marine_result.contents.result == 1:
@@ -193,15 +192,11 @@ class Marine:
         return bool(self._marine.validate_fields(fields_c_arr, fields_len))
 
     @staticmethod
-    def _parse_output(output: str) -> List[str]:
+    def _parse_output(output: str) -> List[Optional[str]]:
         # TODO: this is a bottleneck. Find a better way to provide output from the c code
         f = StringIO(output)
-        csv_parsed_output = next(csv.reader(f, delimiter="\t", quotechar='"'))
-        return csv_parsed_output
-
-    @staticmethod
-    def _prepare_packet_data(packet: bytes):
-        return (c_ubyte * len(packet)).from_buffer_copy(packet)
+        csv_parsed_output = next(csv.reader(f, delimiter="\t", quotechar='"'), [""])
+        return [value or None for value in csv_parsed_output]
 
     def _add_or_get_filter(
         self,
