@@ -83,7 +83,10 @@ def filter_and_parse_packet(
     )
 
 
-def validate_bpf(bpf: str, encapsulation_type: Optional[int] = None,) -> bool:
+def validate_bpf(
+    bpf: str,
+    encapsulation_type: Optional[int] = None,
+) -> bool:
     """
     Validates the given BPF.
     By default the BPF is parsed with ethernet encapsulation,
@@ -100,7 +103,8 @@ def validate_display_filter(display_filter: str) -> bool:
 
 
 def validate_fields(
-    fields: List[str], macros: Optional[Dict[str, List[str]]] = None,
+    fields: List[str],
+    macros: Optional[Dict[str, List[str]]] = None,
 ) -> bool:
     """
     Validates the given fields. Fields have the same name as specified for Wireshark.
