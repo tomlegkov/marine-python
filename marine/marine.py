@@ -138,23 +138,9 @@ class Marine:
         if filter_key in self._filters_cache:
             filter_id = self._filters_cache[filter_key]
         else:
-            filter_id, err = self._add_or_get_filter(
+            filter_id = self._add_or_get_filter(
                 bpf, display_filter, encoded_fields, macro_indices, encapsulation_type
             )
-            if filter_id < 0:
-                if filter_id == c_int.in_dll(self._marine, "BAD_BPF_ERROR_CODE").value:
-                    raise BadBPFException(err)
-                elif (
-                    filter_id
-                    == c_int.in_dll(self._marine, "BAD_DISPLAY_FILTER_ERROR_CODE").value
-                ):
-                    raise BadDisplayFilterException(err)
-                elif (
-                    filter_id
-                    == c_int.in_dll(self._marine, "INVALID_FIELD_ERROR_CODE").value
-                ):
-                    raise InvalidFieldException(err)
-                raise UnknownInternalException(err)
             self._filters_cache[filter_key] = filter_id
 
         marine_result = self._marine.marine_dissect_packet(
@@ -205,7 +191,7 @@ class Marine:
         fields: Optional[List[bytes]] = None,
         macro_indices: Optional[List[int]] = None,
         encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
-    ) -> (int, bytes):
+    ) -> int:
         if fields is not None:
             fields_len = len(fields)
             fields_c_arr = (c_char_p * fields_len)(*fields)
@@ -231,7 +217,22 @@ class Marine:
             self._marine.marine_free_err_msg(err_msg.contents)
         else:
             err_msg_value = None
-        return filter_id, err_msg_value
+        if filter_id < 0:
+            err = None if err_msg_value is None else err_msg_value.decode("utf-8")
+            if filter_id == c_int.in_dll(self._marine, "BAD_BPF_ERROR_CODE").value:
+                raise BadBPFException(err)
+            elif (
+                filter_id
+                == c_int.in_dll(self._marine, "BAD_DISPLAY_FILTER_ERROR_CODE").value
+            ):
+                raise BadDisplayFilterException(err)
+            elif (
+                filter_id
+                == c_int.in_dll(self._marine, "INVALID_FIELD_ERROR_CODE").value
+            ):
+                raise InvalidFieldException(err)
+            raise UnknownInternalException(err)
+        return filter_id
 
     def __del__(self):
         if getattr(self, "_marine", None):
