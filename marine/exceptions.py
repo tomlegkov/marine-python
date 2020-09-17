@@ -1,12 +1,12 @@
-class BadBPFException(Exception):
+class BadBPFException(ValueError):
     pass
 
 
-class BadDisplayFilterException(Exception):
+class BadDisplayFilterException(ValueError):
     pass
 
 
-class InvalidFieldException(Exception):
+class InvalidFieldException(ValueError):
     pass
 
 
