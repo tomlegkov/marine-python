@@ -26,6 +26,38 @@ class MarinePool:
         )
         return self
 
+    def filter(
+        self,
+        packets: List[bytes],
+        bpf: Optional[str] = None,
+        display_filter: Optional[str] = None,
+        encapsulation_type: Optional[int] = None,
+    ) -> List[bool]:
+        result = self.filter_and_parse(
+            packets=packets,
+            bpf=bpf,
+            display_filter=display_filter,
+            encapsulation_type=encapsulation_type,
+        )
+
+        return [passed for passed, _ in result]
+
+    def parse(
+        self,
+        packets: List[bytes],
+        fields: Optional[List[str]] = None,
+        encapsulation_type: Optional[int] = None,
+        macros: Optional[Dict[str, List[str]]] = None,
+    ) -> List[Dict[str, Optional[str]]]:
+        result = self.filter_and_parse(
+            packets=packets,
+            fields=fields,
+            encapsulation_type=encapsulation_type,
+            macros=macros,
+        )
+
+        return [values for _, values in result]
+
     def filter_and_parse(
         self,
         packets: List[bytes],
@@ -34,7 +66,7 @@ class MarinePool:
         fields: Optional[List[str]] = None,
         encapsulation_type: Optional[int] = None,
         macros: Optional[Dict[str, List[str]]] = None,
-    ) -> List[Tuple[bool, Dict[str, str]]]:
+    ) -> List[Tuple[bool, Dict[str, Optional[str]]]]:
         if len(packets) == 0:
             return []
 
