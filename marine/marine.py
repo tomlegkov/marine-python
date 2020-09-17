@@ -260,7 +260,10 @@ class Marine:
             self._macros_cache[macro_key] = ret_value
             return ret_value
 
-    def _detect_encap(self, fields: List[str]) -> int:
+    def _detect_encap(self, fields: Optional[List[str]]) -> int:
+        if not fields:
+            return encap_consts.ENCAP_ETHERNET
+
         encap_key = frozenset(fields)
         if encap_key in self._encap_cache:
             return self._encap_cache[encap_key]
