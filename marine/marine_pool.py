@@ -15,7 +15,6 @@ class MarinePool:
         self._epan_auto_reset_count = epan_auto_reset_count
         self._process_count = process_count
 
-    def __enter__(self):
         ctx = multiprocessing.get_context("spawn")
         # Using spawn so child processes won't get the already initialized marine from the parent process.
         # We do that because initializing marine more than one time in a process causes SIGTRAP
@@ -24,6 +23,8 @@ class MarinePool:
             initializer=self._init_marine,
             initargs=[self._epan_auto_reset_count],
         )
+
+    def __enter__(self):
         return self
 
     def filter_and_parse(
@@ -71,4 +72,7 @@ class MarinePool:
         )
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        self.pool.close()
+
+    def close(self):
         self.pool.close()
