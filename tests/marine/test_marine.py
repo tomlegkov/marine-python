@@ -390,6 +390,40 @@ def test_tcp_packet_filter_and_parse_with_multiple_macros(
     )
 
 
+def test_tcp_packet_filter_and_parse_with_macro_with_non_existing_field_first(
+    marine_or_marine_pool: Union[Marine, MarinePool]
+):
+    src_mac = "00:00:00:12:34:ff"
+    dst_mac = "00:00:00:ff:00:1e"
+    src_ip = "21.53.78.255"
+    dst_ip = "10.0.0.255"
+    src_port = 16424
+    dst_port = 41799
+    bpf_filter = "ip"
+    display_filter = "tcp"
+    macros = {"macro.ip.src": ["ipv6.src", "ip.src"]}
+    expected_output = {
+        "macro.ip.src": src_ip,
+    }
+
+    packet = (
+        ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
+        + ip.IP(src_s=src_ip, dst_s=dst_ip)
+        + tcp.TCP(sport=src_port, dport=dst_port)
+    )
+
+    general_filter_and_parse_test(
+        marine_or_marine_pool=marine_or_marine_pool,
+        packet=packet.bin(),
+        packet_encapsulation=encap_consts.ENCAP_ETHERNET,
+        bpf_filter=bpf_filter,
+        display_filter=display_filter,
+        macros=macros,
+        expected_passed=True,
+        expected_output=expected_output,
+    )
+
+
 def test_tcp_packet_filter_and_parse_with_multiple_different_macros(
     marine_or_marine_pool: Union[Marine, MarinePool]
 ):
