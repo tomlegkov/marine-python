@@ -928,6 +928,10 @@ def test_validate_fields_with_macro(marine_instance: Marine):
     )
 
 
+def test_auto_encap_on_empty_fields(marine_instance: Marine):
+    assert marine_instance._detect_encap(None) == encap_consts.ENCAP_ETHERNET
+
+
 def test_auto_encap_ethernet(marine_instance: Marine):
     assert (
         marine_instance._detect_encap(["ip.src", "ip.dst"])
