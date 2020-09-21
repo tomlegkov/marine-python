@@ -48,13 +48,13 @@ class MarinePool:
         packets: List[bytes],
         fields: Optional[List[str]] = None,
         encapsulation_type: Optional[int] = None,
-        macros: Optional[Dict[str, List[str]]] = None,
+        field_templates: Optional[Dict[str, List[str]]] = None,
     ) -> List[Dict[str, Optional[str]]]:
         result = self.filter_and_parse(
             packets=packets,
             fields=fields,
             encapsulation_type=encapsulation_type,
-            macros=macros,
+            field_templates=field_templates,
         )
 
         return [values for _, values in result]
@@ -66,7 +66,7 @@ class MarinePool:
         display_filter: Optional[str] = None,
         fields: Optional[List[str]] = None,
         encapsulation_type: Optional[int] = None,
-        macros: Optional[Dict[str, List[str]]] = None,
+        field_templates: Optional[Dict[str, List[str]]] = None,
     ) -> List[Tuple[bool, Dict[str, Optional[str]]]]:
         if len(packets) == 0:
             return []
@@ -80,7 +80,7 @@ class MarinePool:
                 repeat(display_filter),
                 repeat(fields),
                 repeat(encapsulation_type),
-                repeat(macros),
+                repeat(field_templates),
             ),
             chunksize=chunk_size,
         )
@@ -97,10 +97,10 @@ class MarinePool:
         display_filter: Optional[str] = None,
         fields: Optional[list] = None,
         encapsulation_type: Optional[int] = None,
-        macros: Optional[Dict[str, List[str]]] = None,
+        field_templates: Optional[Dict[str, List[str]]] = None,
     ) -> (bool, Dict[str, str]):
         return cls._marine_instance.filter_and_parse(
-            packet, bpf, display_filter, fields, encapsulation_type, macros
+            packet, bpf, display_filter, fields, encapsulation_type, field_templates
         )
 
     def __exit__(self, exc_type, exc_val, exc_tb):

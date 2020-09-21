@@ -35,14 +35,14 @@ def filter_packet(
 def parse_packet(
     packet: bytes,
     fields: Optional[List[str]] = None,
-    macros: Optional[Dict[str, List[str]]] = None,
+    field_templates: Optional[Dict[str, List[str]]] = None,
     encapsulation_type: Optional[int] = None,
 ) -> Dict[str, Optional[str]]:
     """
     Parses the given fields from the packet. Fields have the same name as specified for Wireshark.
     If you want to add a custom field, you need to have the required dissector in your Wireshark plugins folder.
     Fields that are not available in the packet will be returned as "".
-    Macros can be used to expand a field - Example macro format: {"macro.ip.src" : ["ip.src", "ipv6.src"]}.
+    Field_templates can be used to expand a field - Example field_template format: {"macro.ip.src" : ["ip.src", "ipv6.src"]}.
     By default the packet is parsed as an ethernet packet,
     to view other possible encapsulation values view encap_consts.
     """
@@ -50,7 +50,7 @@ def parse_packet(
         packet=packet,
         fields=fields,
         encapsulation_type=encapsulation_type,
-        macros=macros,
+        field_templates=field_templates,
     )
 
 
@@ -59,7 +59,7 @@ def filter_and_parse_packet(
     bpf: Optional[List[str]] = None,
     display_filter: Optional[str] = None,
     fields: Optional[List[str]] = None,
-    macros: Optional[Dict[str, List[str]]] = None,
+    field_templates: Optional[Dict[str, List[str]]] = None,
     encapsulation_type: Optional[int] = None,
 ) -> Tuple[bool, Dict[str, Optional[str]]]:
     """
@@ -78,15 +78,12 @@ def filter_and_parse_packet(
         bpf=bpf,
         display_filter=display_filter,
         fields=fields,
-        macros=macros,
+        field_templates=field_templates,
         encapsulation_type=encapsulation_type,
     )
 
 
-def validate_bpf(
-    bpf: str,
-    encapsulation_type: Optional[int] = None,
-) -> bool:
+def validate_bpf(bpf: str, encapsulation_type: Optional[int] = None) -> bool:
     """
     Validates the given BPF.
     By default the BPF is parsed with ethernet encapsulation,
@@ -103,15 +100,16 @@ def validate_display_filter(display_filter: str) -> bool:
 
 
 def validate_fields(
-    fields: List[str],
-    macros: Optional[Dict[str, List[str]]] = None,
+    fields: List[str], field_templates: Optional[Dict[str, List[str]]] = None
 ) -> bool:
     """
     Validates the given fields. Fields have the same name as specified for Wireshark.
     If you want to add a custom field, you need to have the required dissector in your Wireshark plugins folder.
-    Macros can be used to expand a field - Example macro format: {"macro.ip.src" : ["ip.src", "ipv6.src"]}.
+    Field_templates can be used to expand a field - Example field_template format: {"macro.ip.src" : ["ip.src", "ipv6.src"]}.
     """
-    return init_instance().validate_fields(fields=fields, macros=macros)
+    return init_instance().validate_fields(
+        fields=fields, field_templates=field_templates
+    )
 
 
 def get_marine() -> Marine:

@@ -21,7 +21,7 @@ MARINE_NAME = "libmarine.so"
 
 
 class Marine:
-    SUGGESTED_MACROS = {
+    SUGGESTED_FIELD_TEMPLATES = {
         "macro.ip.src": ["ip.src", "arp.src.proto_ipv4"],
         "macro.ip.dst": ["ip.dst", "arp.dst.proto_ipv4"],
         "macro.src_port": ["tcp.srcport", "udp.srcport"],
@@ -38,7 +38,7 @@ class Marine:
             )
 
         self._filters_cache = dict()
-        self._macros_cache = dict()
+        self._field_templates_cache = dict()
         self._encap_cache = dict()
         self._marine = CDLL(MARINE_NAME)
         self._marine.marine_dissect_packet.restype = MARINE_RESULT_POINTER
@@ -86,13 +86,13 @@ class Marine:
         packet: bytes,
         fields: Optional[List[str]] = None,
         encapsulation_type: Optional[int] = None,
-        macros: Optional[Dict[str, List[str]]] = None,
+        field_templates: Optional[Dict[str, List[str]]] = None,
     ) -> Dict[str, Optional[str]]:
         _, result = self.filter_and_parse(
             packet=packet,
             fields=fields,
             encapsulation_type=encapsulation_type,
-            macros=macros,
+            field_templates=field_templates,
         )
 
         return result
@@ -104,7 +104,7 @@ class Marine:
         display_filter: Optional[str] = None,
         fields: Optional[List[str]] = None,
         encapsulation_type: Optional[int] = None,
-        macros: Optional[Dict[str, List[str]]] = None,
+        field_templates: Optional[Dict[str, List[str]]] = None,
     ) -> (bool, Dict[str, Optional[str]]):
         if bpf is None and display_filter is None and fields is None:
             raise ValueError(
@@ -117,12 +117,14 @@ class Marine:
             display_filter = display_filter.encode("utf-8")
 
         if fields is not None:
-            expanded_fields, macro_indices = self._expand_macros(fields, macros)
+            expanded_fields, field_template_indices = self._expand_field_templates(
+                fields, field_templates
+            )
             encoded_fields = [
                 f.encode("utf-8") if isinstance(f, str) else f for f in expanded_fields
             ]
         else:
-            expanded_fields, macro_indices = None, None
+            expanded_fields, field_template_indices = None, None
             encoded_fields = None
 
         if encapsulation_type is None:
@@ -132,14 +134,20 @@ class Marine:
             bpf,
             display_filter,
             tuple(encoded_fields) if fields is not None else None,
-            tuple(macro_indices) if macro_indices is not None else None,
+            tuple(field_template_indices)
+            if field_template_indices is not None
+            else None,
             encapsulation_type,
         )
         if filter_key in self._filters_cache:
             filter_id = self._filters_cache[filter_key]
         else:
             filter_id = self._add_or_get_filter(
-                bpf, display_filter, encoded_fields, macro_indices, encapsulation_type
+                bpf,
+                display_filter,
+                encoded_fields,
+                field_template_indices,
+                encapsulation_type,
             )
             self._filters_cache[filter_key] = filter_id
 
@@ -169,9 +177,9 @@ class Marine:
         return bool(self._marine.validate_display_filter(display_filter))
 
     def validate_fields(
-        self, fields: List[str], macros: Optional[Dict[str, List[str]]] = None
+        self, fields: List[str], field_templates: Optional[Dict[str, List[str]]] = None
     ) -> bool:
-        fields, _ = self._expand_macros(fields, macros)
+        fields, _ = self._expand_field_templates(fields, field_templates)
         fields_len = len(fields)
         fields = [field.encode("utf-8") for field in fields]
         fields_c_arr = (c_char_p * fields_len)(*fields)
@@ -189,7 +197,7 @@ class Marine:
         bpf: Optional[bytes] = None,
         display_filter: Optional[bytes] = None,
         fields: Optional[List[bytes]] = None,
-        macro_indices: Optional[List[int]] = None,
+        field_template_indices: Optional[List[int]] = None,
         encapsulation_type: int = encap_consts.ENCAP_ETHERNET,
     ) -> int:
         if fields is not None:
@@ -199,15 +207,17 @@ class Marine:
             fields_len = 0
             fields_c_arr = None
 
-        macro_indices_c_arr = (
-            (c_int * fields_len)(*macro_indices) if macro_indices is not None else None
+        field_template_indices_c_arr = (
+            (c_int * fields_len)(*field_template_indices)
+            if field_template_indices is not None
+            else None
         )
         err_msg = pointer(POINTER(c_char)())
         filter_id = self._marine.marine_add_filter(
             bpf,
             display_filter,
             fields_c_arr,
-            macro_indices_c_arr,
+            field_template_indices_c_arr,
             fields_len,
             encapsulation_type,
             err_msg,
@@ -238,26 +248,26 @@ class Marine:
         if getattr(self, "_marine", None):
             self._marine.destroy_marine()
 
-    def _expand_macros(
-        self, fields: List[str], macros: Optional[Dict[str, List[str]]]
+    def _expand_field_templates(
+        self, fields: List[str], field_templates: Optional[Dict[str, List[str]]]
     ) -> Tuple[Tuple[str, ...], Optional[Tuple[int, ...]]]:
-        if not macros:
+        if not field_templates:
             return tuple(fields), None
 
-        macro_key = (
+        field_template_key = (
             tuple(fields),
-            frozenset((key, tuple(value)) for key, value in macros.items()),
+            frozenset((key, tuple(value)) for key, value in field_templates.items()),
         )
-        if macro_key in self._macros_cache:
-            return self._macros_cache[macro_key]
+        if field_template_key in self._field_templates_cache:
+            return self._field_templates_cache[field_template_key]
         else:
             expanded_with_indices = [
-                (possible_field, macro_id)
-                for macro_id, field in enumerate(fields)
-                for possible_field in macros.get(field, [field])
+                (possible_field, field_template_id)
+                for field_template_id, field in enumerate(fields)
+                for possible_field in field_templates.get(field, [field])
             ]
             ret_value = tuple(zip(*expanded_with_indices))
-            self._macros_cache[macro_key] = ret_value
+            self._field_templates_cache[field_template_key] = ret_value
             return ret_value
 
     def _detect_encap(self, fields: Optional[List[str]]) -> int:
