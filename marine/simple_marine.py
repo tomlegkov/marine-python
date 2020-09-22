@@ -42,7 +42,7 @@ def parse_packet(
     Parses the given fields from the packet. Fields have the same name as specified for Wireshark.
     If you want to add a custom field, you need to have the required dissector in your Wireshark plugins folder.
     Fields that are not available in the packet will be returned as "".
-    Field_templates can be used to expand a field - Example field_template format: {"macro.ip.src" : ["ip.src", "ipv6.src"]}.
+    Field templates can be used to expand a field - Example field template format: {"macro.ip.src" : ["ip.src", "ipv6.src"]}.
     By default the packet is parsed as an ethernet packet,
     to view other possible encapsulation values view encap_consts.
     """
@@ -105,7 +105,7 @@ def validate_fields(
     """
     Validates the given fields. Fields have the same name as specified for Wireshark.
     If you want to add a custom field, you need to have the required dissector in your Wireshark plugins folder.
-    Field_templates can be used to expand a field - Example field_template format: {"macro.ip.src" : ["ip.src", "ipv6.src"]}.
+    Field templates can be used to expand a field - Example field template format: {"macro.ip.src" : ["ip.src", "ipv6.src"]}.
     """
     return init_instance().validate_fields(
         fields=fields, field_templates=field_templates
