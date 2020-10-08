@@ -38,4 +38,4 @@ jobs:
       run: docker build -t marine-python .
 
     - name: "Run marine-python tests"
-      run: docker run -it --rm -e LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu -v $(pwd)/:/marine-python marine-python
+      run: docker run -i --rm -e LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu -v $(pwd)/:/marine-python marine-python
