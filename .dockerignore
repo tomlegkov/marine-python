@@ -1,0 +1,4 @@
+.git
+.tox
+venv
+.pytest_cache

@@ -1,0 +1,35 @@
+name: Test
+
+on:
+  push:
+    branches: [ feature/test-action ]
+
+jobs:
+  test:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: "Run black"
+      run: black --check .
+
+    - name: "Run flake8"
+      run: flake8 .
+
+    - name: "Cache docker build"
+      uses: actions/cache@v2
+      id: cache-docker
+      with:
+        path: '/var/lib/docker/'
+        key: 'constant-because-docker-handles-cache'
+
+    - name: "Pull marine-core docker image"
+      run: docker pull domerd/marine-core
+
+    - name: "Build marine-python docker image"
+      run: docker build -t marine-python .
+
+    - name: "Run marine-python tests"
+      run: docker run -it --rm -e LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu -v $(pwd)/:/marine-python marine-python
