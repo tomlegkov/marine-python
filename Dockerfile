@@ -1,4 +1,4 @@
-FROM marine-core
+FROM marine-core:marine
 
 RUN python3.8 -m pip install tox
 

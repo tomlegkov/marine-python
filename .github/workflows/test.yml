@@ -32,7 +32,7 @@ jobs:
         key: 'constant-because-docker-handles-cache'
 
     - name: "Pull marine-core docker image"
-      run: docker pull domerd/marine-core
+      run: docker pull domerd/marine-core:marine
 
     - name: "Build marine-python docker image"
       run: docker build -t marine-python .
