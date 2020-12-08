@@ -1,6 +1,4 @@
-import csv
 from ctypes import *
-from io import StringIO
 from typing import Optional, List, Dict, Tuple
 
 from .exceptions import (
@@ -13,7 +11,7 @@ from . import encap_consts
 
 
 class MarineResult(Structure):
-    _fields_ = [("output", c_char_p), ("result", c_int)]
+    _fields_ = [("output", POINTER(c_char_p)), ("len", c_uint), ("result", c_int)]
 
 
 MARINE_RESULT_POINTER = POINTER(MarineResult)
@@ -159,7 +157,7 @@ class Marine:
             success = True
             if fields is not None:
                 parsed_output = self._parse_output(
-                    marine_result.contents.output.decode("utf-8")
+                    marine_result.contents.output, marine_result.contents.len
                 )
                 result = dict(zip(fields, parsed_output))
 
@@ -186,11 +184,12 @@ class Marine:
         return bool(self._marine.validate_fields(fields_c_arr, fields_len))
 
     @staticmethod
-    def _parse_output(output: str) -> List[Optional[str]]:
+    def _parse_output(output: List[str], length: int) -> List[Optional[str]]:
         # TODO: this is a bottleneck. Find a better way to provide output from the c code
-        f = StringIO(output)
-        csv_parsed_output = next(csv.reader(f, delimiter="\t", quotechar='"'), [""])
-        return [value or None for value in csv_parsed_output]
+        return (
+            output[i].decode("utf-8") if output[i] is not None else None
+            for i in range(length)
+        )
 
     def _add_or_get_filter(
         self,
