@@ -1,6 +1,7 @@
 """
 Note: in order to run the tests, you must put libmarine.so next to the marine_fixtures.py file
 """
+from copy import deepcopy
 import pytest
 from typing import List, Union, Optional, Dict
 from marine.marine import Marine
@@ -314,6 +315,38 @@ def test_http_packet_filter_and_parse(marine_or_marine_pool: Union[Marine, Marin
         field_templates=None,
         expected_passed=True,
         expected_output=expected_output,
+    )
+
+
+def test_fragmented_http_filter_and_parse(marine_instance: Marine):
+    get1 = "GET /uri HTTP/1.1\r\nHost: loc".encode("utf-8")
+    get2 = "alhost\r\nUser-Agent: curl/7.71.1\r\nAccept: */*\r\n\r\n".encode("utf-8")
+    l23 = ethernet.Ethernet(
+        src_s="11:22:33:44:55:66", dst_s="77:88:99:aa:bb:cc"
+    ) + ip.IP(src_s="1.2.3.4", dst_s="5.6.7.8")
+    packet1 = deepcopy(l23) + tcp.TCP(sport=1234, dport=80, seq=1) + get1
+    packet2 = deepcopy(l23) + tcp.TCP(sport=1234, dport=80, seq=1 + len(get1)) + get2
+    general_filter_and_parse_test(
+        marine_or_marine_pool=marine_instance,
+        packet=packet1.bin(),
+        packet_encapsulation=encap_consts.ENCAP_ETHERNET,
+        bpf_filter="1=1",
+        display_filter="http",
+        field_templates=None,
+        expected_passed=False,
+        expected_output=None,
+    )
+    general_filter_and_parse_test(
+        marine_or_marine_pool=marine_instance,
+        packet=packet2.bin(),
+        packet_encapsulation=encap_consts.ENCAP_ETHERNET,
+        bpf_filter="1=1",
+        display_filter="http",
+        field_templates=None,
+        expected_passed=True,
+        expected_output={
+            "http.host": "localhost",
+        },
     )
 
 
