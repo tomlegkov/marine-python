@@ -184,10 +184,9 @@ class Marine:
         return bool(self._marine.validate_fields(fields_c_arr, fields_len))
 
     @staticmethod
-    def _parse_output(output: List[str], length: int) -> List[Optional[str]]:
-        # TODO: this is a bottleneck. Find a better way to provide output from the c code
-        return (
-            output[i].decode("utf-8") if output[i] is not None else None
+    def _parse_output(output: POINTER(c_char_p), length: int) -> List[Optional[str]]:
+        return list(
+            output[i][:].decode("utf-8") if output[i] is not None else None
             for i in range(length)
         )
 
