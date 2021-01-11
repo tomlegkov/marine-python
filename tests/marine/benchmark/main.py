@@ -201,7 +201,7 @@ def benchmark_bpf_and_display_filter_and_8_fields_with_macros(
             bpf=packet.good_bpf,
             display_filter=packet.good_display_filter,
             fields=packet.fields_to_extract,
-            macros=Marine.SUGGESTED_MACROS,
+            field_templates=Marine.SUGGESTED_FIELD_TEMPLATES,
             encapsulation_type=encap_consts.ENCAP_ETHERNET,
         )
         assert passed
