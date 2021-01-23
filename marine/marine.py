@@ -1,5 +1,5 @@
 from ctypes import *
-from typing import Optional, List, Dict, Tuple
+from typing import Optional, List, Dict, Tuple, NamedTuple
 
 from .exceptions import (
     BadBPFException,
@@ -16,6 +16,14 @@ class MarineResult(Structure):
 
 MARINE_RESULT_POINTER = POINTER(MarineResult)
 MARINE_NAME = "libmarine.so"
+
+
+class MarineValidationResult(NamedTuple):
+    valid: bool
+    errors: List[str]
+
+    def __bool__(self) -> bool:
+        return self.valid
 
 
 class Marine:
@@ -166,22 +174,42 @@ class Marine:
 
     def validate_bpf(
         self, bpf: str, encapsulation_type: int = encap_consts.ENCAP_ETHERNET
-    ) -> bool:
+    ) -> MarineValidationResult:
         bpf = bpf.encode("utf-8")
-        return bool(self._marine.validate_bpf(bpf, encapsulation_type))
+        err_msg = pointer(POINTER(c_char)())
+        valid = bool(self._marine.validate_bpf(bpf, encapsulation_type, err_msg))
+        if err_msg.contents:
+            err_msg_value = string_at(err_msg.contents)
+            self._marine.marine_free_err_msg(err_msg.contents)
+            return MarineValidationResult(valid, [err_msg_value.decode("utf-8")])
+        return MarineValidationResult(valid, [])
 
-    def validate_display_filter(self, display_filter: str) -> bool:
+    def validate_display_filter(self, display_filter: str) -> MarineValidationResult:
         display_filter = display_filter.encode("utf-8")
-        return bool(self._marine.validate_display_filter(display_filter))
+        err_msg = pointer(POINTER(c_char)())
+        valid = bool(self._marine.validate_display_filter(display_filter, err_msg))
+        if err_msg.contents:
+            err_msg_value = string_at(err_msg.contents)
+            self._marine.marine_free_err_msg(err_msg.contents)
+            return MarineValidationResult(valid, [err_msg_value.decode("utf-8")])
+        return MarineValidationResult(valid, [])
 
     def validate_fields(
         self, fields: List[str], field_templates: Optional[Dict[str, List[str]]] = None
-    ) -> bool:
+    ) -> MarineValidationResult:
         fields, _ = self._expand_field_templates(fields, field_templates)
         fields_len = len(fields)
         fields = [field.encode("utf-8") for field in fields]
         fields_c_arr = (c_char_p * fields_len)(*fields)
-        return bool(self._marine.validate_fields(fields_c_arr, fields_len))
+        err_msg = pointer(POINTER(c_char)())
+        valid = bool(self._marine.validate_fields(fields_c_arr, fields_len, err_msg))
+        if err_msg.contents:
+            err_msg_value = string_at(err_msg.contents)
+            self._marine.marine_free_err_msg(err_msg.contents)
+            return MarineValidationResult(
+                valid, err_msg_value.decode("utf-8").split("\t")
+            )
+        return MarineValidationResult(valid, [])
 
     @staticmethod
     def _parse_output(output: POINTER(c_char_p), length: int) -> List[Optional[str]]:
@@ -228,7 +256,7 @@ class Marine:
         if filter_id < 0:
             err = None if err_msg_value is None else err_msg_value.decode("utf-8")
             if filter_id == c_int.in_dll(self._marine, "BAD_BPF_ERROR_CODE").value:
-                raise BadBPFException(err)
+                raise BadBPFException(f"Failed compiling the BPF: {err}")
             elif (
                 filter_id
                 == c_int.in_dll(self._marine, "BAD_DISPLAY_FILTER_ERROR_CODE").value
