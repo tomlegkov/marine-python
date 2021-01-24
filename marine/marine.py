@@ -247,7 +247,7 @@ class Marine:
         error = self._resolve_err_msg(err_msg)
         if filter_id < 0:
             if filter_id == c_int.in_dll(self._marine, "BAD_BPF_ERROR_CODE").value:
-                raise BadBPFException(f"Failed compiling the BPF: {error}")
+                raise BadBPFException(error)
             elif (
                 filter_id
                 == c_int.in_dll(self._marine, "BAD_DISPLAY_FILTER_ERROR_CODE").value

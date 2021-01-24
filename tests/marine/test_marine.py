@@ -876,7 +876,7 @@ def test_packet_doesnt_pass_filter_because_of_display_filter(
 def test_illegal_bpf_in_filter_and_parse(
     marine_or_marine_pool: Union[Marine, MarinePool], tcp_packet: bytes
 ):
-    with pytest.raises(BadBPFException, match="Failed compiling the BPF"):
+    with pytest.raises(BadBPFException, match="syntax error"):
         filter_and_parse(
             marine_or_marine_pool,
             tcp_packet,
