@@ -965,9 +965,11 @@ def test_validate_fields_success(marine_instance: Marine):
 
 
 def test_validate_fields_failure(marine_instance: Marine):
-    result = marine_instance.validate_fields(["ip.src", "eth.dst", "this.field.is.bad"])
+    result = marine_instance.validate_fields(
+        ["ip.src", "this.field.is.bad", "eth.dst", "another.bad"]
+    )
     assert not result
-    assert result.errors == ["this.field.is.bad"]
+    assert set(result.errors) == {"this.field.is.bad", "another.bad"}
 
 
 def test_validate_fields_with_field_template(marine_instance: Marine):
