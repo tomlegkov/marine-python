@@ -175,9 +175,9 @@ class Marine:
     def _resolve_err_msg(self, err_msg: POINTER(POINTER(c_char))) -> Optional[str]:
         if not err_msg.contents:
             return None
-        error = string_at(err_msg.contents).decode("utf-8")
+        error = string_at(err_msg.contents)
         self._marine.marine_free_err_msg(err_msg.contents)
-        return error
+        return error.decode("utf-8")
 
     def validate_bpf(
         self, bpf: str, encapsulation_type: int = encap_consts.ENCAP_ETHERNET
