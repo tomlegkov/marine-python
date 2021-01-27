@@ -1,4 +1,4 @@
-from .marine import Marine
+from .marine import Marine, MarineFilterValidationResult, MarineFieldsValidationResult
 from typing import Optional, List, Dict, Tuple
 
 marine_instance = None
@@ -83,7 +83,9 @@ def filter_and_parse_packet(
     )
 
 
-def validate_bpf(bpf: str, encapsulation_type: Optional[int] = None) -> bool:
+def validate_bpf(
+    bpf: str, encapsulation_type: Optional[int] = None
+) -> MarineFilterValidationResult:
     """
     Validates the given BPF.
     By default the BPF is parsed with ethernet encapsulation,
@@ -92,7 +94,7 @@ def validate_bpf(bpf: str, encapsulation_type: Optional[int] = None) -> bool:
     return init_instance().validate_bpf(bpf=bpf, encapsulation_type=encapsulation_type)
 
 
-def validate_display_filter(display_filter: str) -> bool:
+def validate_display_filter(display_filter: str) -> MarineFilterValidationResult:
     """
     Validates the given display filter.
     """
@@ -101,7 +103,7 @@ def validate_display_filter(display_filter: str) -> bool:
 
 def validate_fields(
     fields: List[str], field_templates: Optional[Dict[str, List[str]]] = None
-) -> bool:
+) -> MarineFieldsValidationResult:
     """
     Validates the given fields. Fields have the same name as specified for Wireshark.
     If you want to add a custom field, you need to have the required dissector in your Wireshark plugins folder.

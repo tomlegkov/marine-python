@@ -876,7 +876,7 @@ def test_packet_doesnt_pass_filter_because_of_display_filter(
 def test_illegal_bpf_in_filter_and_parse(
     marine_or_marine_pool: Union[Marine, MarinePool], tcp_packet: bytes
 ):
-    with pytest.raises(BadBPFException, match="Failed compiling the BPF"):
+    with pytest.raises(BadBPFException, match="syntax error"):
         filter_and_parse(
             marine_or_marine_pool,
             tcp_packet,
@@ -928,7 +928,9 @@ def test_validate_bpf_success(marine_instance: Union[Marine, MarinePool]):
 
 
 def test_validate_bpf_failure(marine_instance: Union[Marine, MarinePool]):
-    assert not marine_instance.validate_bpf("what is this bpf?")
+    res = marine_instance.validate_bpf("what is this bpf?")
+    assert not res
+    assert "syntax error" in res.error
 
 
 def test_validate_bpf_failure_on_encapsulation(marine_instance: Marine):
@@ -942,7 +944,9 @@ def test_validate_display_filter_success(marine_instance: Marine):
 
 
 def test_validate_display_filter_failure(marine_instance: Marine):
-    assert not marine_instance.validate_display_filter("illegal_filter")
+    res = marine_instance.validate_display_filter("illegal_filter")
+    assert not res
+    assert "neither a field nor a protocol" in res.error
 
 
 def test_get_epan_auto_reset_count(marine_instance: Marine, epan_auto_reset_count: int):
@@ -961,9 +965,11 @@ def test_validate_fields_success(marine_instance: Marine):
 
 
 def test_validate_fields_failure(marine_instance: Marine):
-    assert not marine_instance.validate_fields(
-        ["ip.src", "eth.dst", "this.field.is.bad"]
+    result = marine_instance.validate_fields(
+        ["ip.src", "this.field.is.bad", "eth.dst", "another.bad"]
     )
+    assert not result
+    assert set(result.errors) == {"this.field.is.bad", "another.bad"}
 
 
 def test_validate_fields_with_field_template(marine_instance: Marine):
