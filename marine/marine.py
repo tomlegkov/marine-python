@@ -18,9 +18,17 @@ MARINE_RESULT_POINTER = POINTER(MarineResult)
 MARINE_NAME = "libmarine.so"
 
 
-class MarineValidationResult(NamedTuple):
+class MarineFieldsValidationResult(NamedTuple):
     valid: bool
     errors: List[str]
+
+    def __bool__(self) -> bool:
+        return self.valid
+
+
+class MarineFilterValidationResult(NamedTuple):
+    valid: bool
+    error: Optional[str]
 
     def __bool__(self) -> bool:
         return self.valid
@@ -181,23 +189,25 @@ class Marine:
 
     def validate_bpf(
         self, bpf: str, encapsulation_type: int = encap_consts.ENCAP_ETHERNET
-    ) -> MarineValidationResult:
+    ) -> MarineFilterValidationResult:
         bpf = bpf.encode("utf-8")
         err_msg = pointer(POINTER(c_char)())
         valid = bool(self._marine.validate_bpf(bpf, encapsulation_type, err_msg))
         error = self._resolve_err_msg(err_msg)
-        return MarineValidationResult(valid, [] if error is None else [error])
+        return MarineFilterValidationResult(valid, error)
 
-    def validate_display_filter(self, display_filter: str) -> MarineValidationResult:
+    def validate_display_filter(
+        self, display_filter: str
+    ) -> MarineFilterValidationResult:
         display_filter = display_filter.encode("utf-8")
         err_msg = pointer(POINTER(c_char)())
         valid = bool(self._marine.validate_display_filter(display_filter, err_msg))
         error = self._resolve_err_msg(err_msg)
-        return MarineValidationResult(valid, [] if error is None else [error])
+        return MarineFilterValidationResult(valid, error)
 
     def validate_fields(
         self, fields: List[str], field_templates: Optional[Dict[str, List[str]]] = None
-    ) -> MarineValidationResult:
+    ) -> MarineFieldsValidationResult:
         fields, _ = self._expand_field_templates(fields, field_templates)
         fields_len = len(fields)
         fields = [field.encode("utf-8") for field in fields]
@@ -205,7 +215,9 @@ class Marine:
         err_msg = pointer(POINTER(c_char)())
         valid = bool(self._marine.validate_fields(fields_c_arr, fields_len, err_msg))
         error = self._resolve_err_msg(err_msg)
-        return MarineValidationResult(valid, [] if error is None else error.split("\t"))
+        return MarineFieldsValidationResult(
+            valid, [] if error is None else error.split("\t")
+        )
 
     @staticmethod
     def _parse_output(output: POINTER(c_char_p), length: int) -> List[Optional[str]]:

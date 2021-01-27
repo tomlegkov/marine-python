@@ -930,7 +930,7 @@ def test_validate_bpf_success(marine_instance: Union[Marine, MarinePool]):
 def test_validate_bpf_failure(marine_instance: Union[Marine, MarinePool]):
     res = marine_instance.validate_bpf("what is this bpf?")
     assert not res
-    assert "syntax error" in res.errors[0]
+    assert "syntax error" in res.error
 
 
 def test_validate_bpf_failure_on_encapsulation(marine_instance: Marine):
@@ -946,7 +946,7 @@ def test_validate_display_filter_success(marine_instance: Marine):
 def test_validate_display_filter_failure(marine_instance: Marine):
     res = marine_instance.validate_display_filter("illegal_filter")
     assert not res
-    assert "neither a field nor a protocol" in res.errors[0]
+    assert "neither a field nor a protocol" in res.error
 
 
 def test_get_epan_auto_reset_count(marine_instance: Marine, epan_auto_reset_count: int):
