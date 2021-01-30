@@ -4,8 +4,8 @@ FROM domerd/marine-core:$MARINE_CORE_TAG as builder
 
 WORKDIR /marine-python
 
-COPY setup* ./
-COPY README* ./
+COPY setup.py setup.cfg ./
+COPY README.md ./
 COPY LICENSE ./
 COPY marine ./marine
 
