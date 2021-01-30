@@ -10,8 +10,18 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Extract branch name
+      shell: bash
+      run: echo "##[set-output name=tag;]$(echo ${GITHUB_REF#refs/heads/} | tr / -)"
+      id: extract_branch
+
+    - name: "Pull core image"
+      shell: bash
+      run: echo -n "##[set-output name=tag;]" && docker pull domerd/marine-core:${{ steps.extract_branch.outputs.tag }} > /dev/null && echo "${{ steps.extract_branch.outputs.tag }}" || echo marine
+      id: detect_tag
+
     - name: "Build marine-python docker image"
-      run: docker build --build-arg MARINE_CORE_TAG=$(echo ${GITHUB_REF##refs/heads/} | tr / -) --pull -t marine-python .
+      run: docker build --build-arg MARINE_CORE_TAG=${{ steps.detect_tag.outputs.tag }} --pull -t marine-python .
 
     - name: "Run marine-python tests"
       run: docker run -i --rm  -v $(pwd):/marine-python -v $(pwd)/dist:/io marine-python
