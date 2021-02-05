@@ -5,7 +5,7 @@ from typing import List, TypedDict
 class Policy(TypedDict):
     name: str
     lib_whitelist: List[str]
-    # There are more fields bu they don't concern us
+    # There are more fields but they don't concern us
 
 
 policy_path = "/auditwheel/policy/policy.json"
