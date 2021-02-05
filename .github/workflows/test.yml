@@ -17,7 +17,7 @@ jobs:
 
     - name: "Pull core image"
       shell: bash
-      run: echo -n "##[set-output name=tag;]" && docker pull domerd/marine-core:${{ steps.extract_branch.outputs.tag }} > /dev/null && echo "${{ steps.extract_branch.outputs.tag }}" || echo marine
+      run: echo -n "##[set-output name=tag;]" && docker pull tomlegkov/marine-core:${{ steps.extract_branch.outputs.tag }} > /dev/null && echo "${{ steps.extract_branch.outputs.tag }}" || echo marine
       id: detect_tag
 
     - name: "Build marine-python docker image"

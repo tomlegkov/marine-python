@@ -1,6 +1,6 @@
 ARG MARINE_CORE_TAG=marine
 
-FROM domerd/marine-core:$MARINE_CORE_TAG as builder
+FROM tomlegkov/marine-core:$MARINE_CORE_TAG as builder
 
 WORKDIR /marine-python
 
