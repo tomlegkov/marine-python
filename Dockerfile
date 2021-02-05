@@ -47,5 +47,4 @@ VOLUME /io
 
 # --import-mode is a pytest option
 # It makes pytest import marine from site-packages (wheel) and not from the repo
-CMD tox --installpkg /dist/marine*.whl -- --import-mode append && \
-    cp /dist/marine*.whl /io
+CMD tox --installpkg /dist/marine*.whl -- --import-mode append

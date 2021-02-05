@@ -23,9 +23,12 @@ jobs:
     - name: "Build marine-python docker image"
       run: docker build --build-arg MARINE_CORE_TAG=${{ steps.detect_tag.outputs.tag }} --pull -t marine-python .
 
-    - name: "Run marine-python tests"
-      run: docker run -i --rm  -v $(pwd):/marine-python -v $(pwd)/dist:/io marine-python
+    - name: "Extract wheel from docker image"
+      run: docker run -i --rm -v $(pwd)/dist:/io marine-python sh -c "cp /dist/marine*.whl /io/"
 
     - uses: actions/upload-artifact@v2
       with:
         path: dist/*.whl
+
+    - name: "Run marine-python tests"
+      run: docker run -i --rm marine-python
