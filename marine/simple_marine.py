@@ -1,3 +1,4 @@
+from . import encap_consts
 from .marine import Marine, MarineFilterValidationResult, MarineFieldsValidationResult
 from typing import Optional, List, Dict, Tuple
 
@@ -84,7 +85,7 @@ def filter_and_parse_packet(
 
 
 def validate_bpf(
-    bpf: str, encapsulation_type: Optional[int] = None
+    bpf: str, encapsulation_type: int = encap_consts.ENCAP_ETHERNET
 ) -> MarineFilterValidationResult:
     """
     Validates the given BPF.
