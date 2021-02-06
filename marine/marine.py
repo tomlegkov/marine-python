@@ -1,4 +1,5 @@
 from ctypes import *
+from pathlib import Path
 from typing import Optional, List, Dict, Tuple, NamedTuple
 
 from .exceptions import (
@@ -15,7 +16,8 @@ class MarineResult(Structure):
 
 
 MARINE_RESULT_POINTER = POINTER(MarineResult)
-MARINE_NAME = "libmarine.so"
+
+MARINE_NAME = Path(__file__).parent / ".wslibs" / "libmarine.so"
 
 
 class MarineFieldsValidationResult(NamedTuple):
