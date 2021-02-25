@@ -316,3 +316,6 @@ class Marine:
 
         self._encap_cache[encap_key] = encap_consts.ENCAP_ETHERNET
         return encap_consts.ENCAP_ETHERNET
+
+    def report_fields(self) -> None:
+        self._marine.marine_report_fields()

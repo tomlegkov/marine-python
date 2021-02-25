@@ -120,3 +120,10 @@ def get_marine() -> Marine:
     Gets the used marine object.
     """
     return init_instance()
+
+
+def report_fields() -> None:
+    """
+    Dumps to stdout all of marine, similiarly to `tshark -G`
+    """
+    return get_marine().report_fields()

@@ -994,3 +994,10 @@ def test_auto_encap_wireless(marine_instance: Marine):
         marine_instance._detect_encap(["ip.src", "ip.dst", "radiotap.channel"])
         == encap_consts.ENCAP_IEEE_802_11_RADIOTAP
     )
+
+
+def test_report_fields(marine_instance: Marine, capfd: pytest.CaptureFixture):
+    marine_instance.report_fields()
+    out = capfd.readouterr().out
+    assert "eth.src" in out
+    assert "ip.src" in out
