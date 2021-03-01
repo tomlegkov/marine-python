@@ -978,6 +978,15 @@ def test_validate_fields_with_field_template(marine_instance: Marine):
     )
 
 
+def test_validate_fields_with_23_long_field(marine_instance: Marine):
+    """
+    We did not allocate err_msg in parse_output_fields in marine.c properly, 
+    and fields of length (23 + 16*n) specifically would cause an error.
+    This error was probably was caused by overriding memory that was used by the allocator.
+    """
+    assert marine_instance.validate_fields("a" * 23)
+
+
 def test_auto_encap_on_empty_fields(marine_instance: Marine):
     assert marine_instance._detect_encap(None) == encap_consts.ENCAP_ETHERNET
 
@@ -1001,3 +1010,8 @@ def test_report_fields(marine_instance: Marine, capfd: pytest.CaptureFixture):
     out = capfd.readouterr().out
     assert "eth.src" in out
     assert "ip.src" in out
+
+
+def test_parse_fields_preserves_order(marine_instance: Marine, tcp_packet: bytes):
+    assert marine_instance.parse(tcp_packet, fields=["udp.srcport", "tcp.srcport"]) == {"udp.srcport": None,
+                                                                                        "tcp.srcport": "16424"}
