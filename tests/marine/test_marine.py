@@ -978,7 +978,7 @@ def test_validate_fields_with_field_template(marine_instance: Marine):
     )
 
 
-def test_validate_fields_with_23_long_field(marine_instance: Marine):
+def test_validate_fields_with_field_of_length_23(marine_instance: Marine):
     """
     We did not allocate err_msg in parse_output_fields in marine.c properly, 
     and fields of length (23 + 16*n) specifically would cause an error.
