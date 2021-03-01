@@ -3,7 +3,7 @@ Note: in order to run the tests, you must put libmarine.so next to the marine_fi
 """
 import pytest
 from typing import List, Union, Optional, Dict
-from marine.marine import Marine
+from marine.marine import Marine, MarineFieldsValidationResult
 from marine.marine_pool import MarinePool
 
 from pypacker.layer12 import ethernet, arp, radiotap, ieee80211, llc
@@ -980,11 +980,19 @@ def test_validate_fields_with_field_template(marine_instance: Marine):
 
 def test_validate_fields_with_field_of_length_23(marine_instance: Marine):
     """
-    We did not allocate err_msg in parse_output_fields in marine.c properly, 
+    We did not allocate err_msg in parse_output_fields in marine.c properly,
     and fields of length (23 + 16*n) specifically would cause an error.
     This error was probably was caused by overriding memory that was used by the allocator.
     """
-    assert marine_instance.validate_fields("a" * 23)
+    fields = ["a" * 23]
+    assert marine_instance.validate_fields(fields) == MarineFieldsValidationResult(
+        False, fields
+    )
+
+
+def test_validate_fields_errors_order(marine_instance: Marine):
+    fields = ["wrong", "this too", "wtf"]
+    assert marine_instance.validate_fields(fields).errors == fields
 
 
 def test_auto_encap_on_empty_fields(marine_instance: Marine):
@@ -1013,5 +1021,7 @@ def test_report_fields(marine_instance: Marine, capfd: pytest.CaptureFixture):
 
 
 def test_parse_fields_preserves_order(marine_instance: Marine, tcp_packet: bytes):
-    assert marine_instance.parse(tcp_packet, fields=["udp.srcport", "tcp.srcport"]) == {"udp.srcport": None,
-                                                                                        "tcp.srcport": "16424"}
+    assert marine_instance.parse(tcp_packet, fields=["udp.srcport", "tcp.srcport"]) == {
+        "udp.srcport": None,
+        "tcp.srcport": "16424",
+    }
