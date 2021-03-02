@@ -1,6 +1,7 @@
 from ctypes import *
 from pathlib import Path
 from typing import Optional, List, Dict, Tuple, NamedTuple
+import os
 
 from .exceptions import (
     BadBPFException,
@@ -17,7 +18,9 @@ class MarineResult(Structure):
 
 MARINE_RESULT_POINTER = POINTER(MarineResult)
 
-MARINE_NAME = Path(__file__).parent / ".wslibs" / "libmarine.so"
+MARINE_BASE_DIR = Path(__file__).parent / ".ws"
+MARINE_NAME = MARINE_BASE_DIR / "libs" / "libmarine.so"
+MARINE_DATA_DIR = MARINE_BASE_DIR / "data"
 
 
 class MarineFieldsValidationResult(NamedTuple):
@@ -46,6 +49,8 @@ class Marine:
     WIFI_RADIO_PROTOCOLS = frozenset(["radiotap", "wlan", "wlan_radio"])
 
     def __init__(self, epan_auto_reset_count: Optional[int] = None):
+        if not os.getenv("WIRESHARK_DATA_DIR"):
+            os.putenv("WIRESHARK_DATA_DIR", str(MARINE_DATA_DIR))
         try:
             cdll.LoadLibrary(MARINE_NAME)
         except Exception:

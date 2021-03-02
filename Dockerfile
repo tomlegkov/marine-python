@@ -11,8 +11,10 @@ COPY marine ./marine
 
 ENV PY="/opt/python/cp38-cp38/bin/python"
 
-RUN mkdir marine/.wslibs && \
-    cp /build/run/libmarine.so /build/run/lib*so.0 marine/.wslibs/ && \
+RUN mkdir -p marine/.ws/data && \
+    rsync -L --exclude idl2wrs --exclude 'lib*.so*' --exclude 'plugins*' --exclude 'marine_*' --exclude tshark --exclude '*.html' --exclude 'lib*.a' /build/run/* marine/.ws/data/ && \
+    mkdir marine/.ws/libs && \
+    rsync -L /build/run/libmarine.so /build/run/lib*so.0 marine/.ws/libs/ && \
     $PY setup.py bdist_wheel --dist-dir /tmp
 
 WORKDIR /dist
