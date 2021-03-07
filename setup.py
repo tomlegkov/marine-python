@@ -10,6 +10,6 @@ setup(
     packages=["marine"],
     include_package_data=True,
     package_data={
-        "marine": [".wslibs/*.so*"],
+        "marine": [".ws/libs/*.so*", ".ws/data/*"],
     },
 )
