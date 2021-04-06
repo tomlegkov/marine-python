@@ -1027,4 +1027,4 @@ def test_parse_fields_preserves_order(marine_instance: Marine, tcp_packet: bytes
     }
 
 def test_filter_packet_larger_than_1514(marine_instance: Marine):
-    assert marine_instance.filter(b'a' * 2500, display_filter='frame contains a')
+    assert not marine_instance.filter(b'a' * 2500, display_filter='frame contains test')
