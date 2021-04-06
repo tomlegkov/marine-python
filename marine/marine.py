@@ -50,7 +50,7 @@ class Marine:
 
     def __init__(self, epan_auto_reset_count: Optional[int] = None):
         if not os.getenv("WIRESHARK_DATA_DIR"):
-            os.environ["WIRESHARK_DATA_DIR"] = str(MARINE_DATA_DIR))
+            os.environ["WIRESHARK_DATA_DIR"] = str(MARINE_DATA_DIR)
         try:
             cdll.LoadLibrary(MARINE_NAME)
         except Exception:
