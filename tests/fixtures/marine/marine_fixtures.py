@@ -25,6 +25,11 @@ def tcp_packet() -> bytes:
     return packet.bin()
 
 
+@pytest.fixture
+def tcp_packet_fields(marine_instance: Marine, tcp_packet: bytes):
+    return marine_instance.parse_all_fields(tcp_packet)
+
+
 @pytest.fixture(scope="session")
 def marine_so_path() -> str:
     path = Path(__file__).parent / "libmarine.so"

@@ -1,5 +1,10 @@
 from . import encap_consts
-from .marine import Marine, MarineFilterValidationResult, MarineFieldsValidationResult
+from .marine import (
+    Marine,
+    MarineFilterValidationResult,
+    MarineFieldsValidationResult,
+    ParsedPacket,
+)
 from typing import Optional, List, Dict, Tuple
 
 marine_instance = None
@@ -82,6 +87,15 @@ def filter_and_parse_packet(
         field_templates=field_templates,
         encapsulation_type=encapsulation_type,
     )
+
+
+def parse_all_packet_fields(
+    packet: bytes, encapsulation_type: Optional[int] = None
+) -> ParsedPacket:
+    """
+    Parses the given packet with wireshark's packet parser, returning a dict with all it's fields.
+    """
+    return init_instance().parse_all_fields(packet, encapsulation_type)
 
 
 def validate_bpf(
