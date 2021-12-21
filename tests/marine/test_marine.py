@@ -19,13 +19,13 @@ from marine import BadBPFException, BadDisplayFilterException, InvalidFieldExcep
 
 
 def filter_and_parse(
-        marine_or_marine_pool: Union[Marine, MarinePool],
-        packet: bytes,
-        packet_encapsulation: Optional[int],
-        bpf_filter: Optional[str] = None,
-        display_filter: Optional[str] = None,
-        fields: Optional[List[str]] = None,
-        field_templates: Optional[Dict[str, List[str]]] = None,
+    marine_or_marine_pool: Union[Marine, MarinePool],
+    packet: bytes,
+    packet_encapsulation: Optional[int],
+    bpf_filter: Optional[str] = None,
+    display_filter: Optional[str] = None,
+    fields: Optional[List[str]] = None,
+    field_templates: Optional[Dict[str, List[str]]] = None,
 ):
     return (
         marine_or_marine_pool.filter_and_parse(
@@ -49,14 +49,14 @@ def filter_and_parse(
 
 
 def general_filter_and_parse_test(
-        marine_or_marine_pool: Union[Marine, MarinePool],
-        packet: bytes,
-        packet_encapsulation: Optional[int],
-        bpf_filter: Optional[str],
-        display_filter: Optional[str],
-        field_templates: Optional[Dict[str, List[str]]],
-        expected_passed: bool,
-        expected_output: Optional[Dict[str, Optional[Union[int, str]]]],
+    marine_or_marine_pool: Union[Marine, MarinePool],
+    packet: bytes,
+    packet_encapsulation: Optional[int],
+    bpf_filter: Optional[str],
+    display_filter: Optional[str],
+    field_templates: Optional[Dict[str, List[str]]],
+    expected_passed: bool,
+    expected_output: Optional[Dict[str, Optional[Union[int, str]]]],
 ):
     expected_fields = list(expected_output.keys()) if expected_output else None
     passed, output = filter_and_parse(
@@ -127,10 +127,10 @@ def test_icmp_packet_filter_and_parse(marine_or_marine_pool: Union[Marine, Marin
     }
 
     packet = (
-            ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
-            + ip.IP(src_s=src_ip, dst_s=dst_ip, p=ip.IP_PROTO_ICMP)
-            + icmp.ICMP(type=icmp_echo_type)
-            + icmp.ICMP.Echo()
+        ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
+        + ip.IP(src_s=src_ip, dst_s=dst_ip, p=ip.IP_PROTO_ICMP)
+        + icmp.ICMP(type=icmp_echo_type)
+        + icmp.ICMP.Echo()
     )
 
     general_filter_and_parse_test(
@@ -164,9 +164,9 @@ def test_tcp_packet_filter_and_parse(marine_or_marine_pool: Union[Marine, Marine
     }
 
     packet = (
-            ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
-            + ip.IP(src_s=src_ip, dst_s=dst_ip)
-            + tcp.TCP(sport=src_port, dport=dst_port)
+        ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
+        + ip.IP(src_s=src_ip, dst_s=dst_ip)
+        + tcp.TCP(sport=src_port, dport=dst_port)
     )
 
     general_filter_and_parse_test(
@@ -202,10 +202,10 @@ def test_dns_packet_filter_and_parse(marine_or_marine_pool: Union[Marine, Marine
     }
 
     packet = (
-            ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
-            + ip.IP(src_s=src_ip, dst_s=dst_ip, p=ip.IP_PROTO_UDP)
-            + udp.UDP(sport=src_port, dport=dst_port)
-            + dns.DNS(queries=[dns.DNS.Query(name_s=domain_name, type=1, cls=1)])
+        ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
+        + ip.IP(src_s=src_ip, dst_s=dst_ip, p=ip.IP_PROTO_UDP)
+        + udp.UDP(sport=src_port, dport=dst_port)
+        + dns.DNS(queries=[dns.DNS.Query(name_s=domain_name, type=1, cls=1)])
     )
 
     general_filter_and_parse_test(
@@ -242,20 +242,20 @@ def test_dhcp_packet_filter_and_parse(marine_or_marine_pool: Union[Marine, Marin
     }
 
     packet = (
-            ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
-            + ip.IP(src_s=src_ip, dst_s=broadcast_ip, p=ip.IP_PROTO_UDP)
-            + udp.UDP(sport=src_port, dport=dst_port)
-            + dhcp.DHCP(
-        yiaddr_s=given_ip,
-        magic=dhcp.DHCP_MAGIC,
-        opts=[
-            dhcp.DHCPOpt(
-                type=dhcp.DHCP_OPT_SERVER_ID,
-                len=4,
-                body_bytes=bytes(int(num) for num in src_ip.split(".")),
-            )
-        ],
-    )
+        ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
+        + ip.IP(src_s=src_ip, dst_s=broadcast_ip, p=ip.IP_PROTO_UDP)
+        + udp.UDP(sport=src_port, dport=dst_port)
+        + dhcp.DHCP(
+            yiaddr_s=given_ip,
+            magic=dhcp.DHCP_MAGIC,
+            opts=[
+                dhcp.DHCPOpt(
+                    type=dhcp.DHCP_OPT_SERVER_ID,
+                    len=4,
+                    body_bytes=bytes(int(num) for num in src_ip.split(".")),
+                )
+            ],
+        )
     )
 
     general_filter_and_parse_test(
@@ -297,12 +297,12 @@ def test_http_packet_filter_and_parse(marine_or_marine_pool: Union[Marine, Marin
         "http.host": domain_name,
     }
     packet = (
-            ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
-            + ip.IP(src_s=src_ip, dst_s=dst_ip)
-            + tcp.TCP(sport=src_port, dport=dst_port)
-            + http.HTTP(
-        f"{http_type} {uri} {version}\r\nHost: {domain_name}\r\n\r\n{body}\r\n".encode()
-    )
+        ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
+        + ip.IP(src_s=src_ip, dst_s=dst_ip)
+        + tcp.TCP(sport=src_port, dport=dst_port)
+        + http.HTTP(
+            f"{http_type} {uri} {version}\r\nHost: {domain_name}\r\n\r\n{body}\r\n".encode()
+        )
     )
 
     general_filter_and_parse_test(
@@ -318,7 +318,7 @@ def test_http_packet_filter_and_parse(marine_or_marine_pool: Union[Marine, Marin
 
 
 def test_tcp_packet_filter_and_parse_with_field_template(
-        marine_or_marine_pool: Union[Marine, MarinePool]
+    marine_or_marine_pool: Union[Marine, MarinePool]
 ):
     src_mac = "00:00:00:12:34:ff"
     dst_mac = "00:00:00:ff:00:1e"
@@ -339,9 +339,9 @@ def test_tcp_packet_filter_and_parse_with_field_template(
     }
 
     packet = (
-            ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
-            + ip.IP(src_s=src_ip, dst_s=dst_ip)
-            + tcp.TCP(sport=src_port, dport=dst_port)
+        ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
+        + ip.IP(src_s=src_ip, dst_s=dst_ip)
+        + tcp.TCP(sport=src_port, dport=dst_port)
     )
 
     general_filter_and_parse_test(
@@ -357,7 +357,7 @@ def test_tcp_packet_filter_and_parse_with_field_template(
 
 
 def test_tcp_packet_filter_and_parse_with_multiple_field_templates(
-        marine_or_marine_pool: Union[Marine, MarinePool]
+    marine_or_marine_pool: Union[Marine, MarinePool]
 ):
     src_mac = "00:00:00:12:34:ff"
     dst_mac = "00:00:00:ff:00:1e"
@@ -383,9 +383,9 @@ def test_tcp_packet_filter_and_parse_with_multiple_field_templates(
     }
 
     packet = (
-            ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
-            + ip.IP(src_s=src_ip, dst_s=dst_ip)
-            + tcp.TCP(sport=src_port, dport=dst_port)
+        ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
+        + ip.IP(src_s=src_ip, dst_s=dst_ip)
+        + tcp.TCP(sport=src_port, dport=dst_port)
     )
 
     general_filter_and_parse_test(
@@ -401,7 +401,7 @@ def test_tcp_packet_filter_and_parse_with_multiple_field_templates(
 
 
 def test_tcp_packet_filter_and_parse_with_field_template_with_non_existing_field_first(
-        marine_or_marine_pool: Union[Marine, MarinePool]
+    marine_or_marine_pool: Union[Marine, MarinePool]
 ):
     src_mac = "00:00:00:12:34:ff"
     dst_mac = "00:00:00:ff:00:1e"
@@ -417,9 +417,9 @@ def test_tcp_packet_filter_and_parse_with_field_template_with_non_existing_field
     }
 
     packet = (
-            ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
-            + ip.IP(src_s=src_ip, dst_s=dst_ip)
-            + tcp.TCP(sport=src_port, dport=dst_port)
+        ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
+        + ip.IP(src_s=src_ip, dst_s=dst_ip)
+        + tcp.TCP(sport=src_port, dport=dst_port)
     )
 
     general_filter_and_parse_test(
@@ -435,7 +435,7 @@ def test_tcp_packet_filter_and_parse_with_field_template_with_non_existing_field
 
 
 def test_tcp_packet_filter_and_parse_with_multiple_different_field_templates(
-        marine_or_marine_pool: Union[Marine, MarinePool]
+    marine_or_marine_pool: Union[Marine, MarinePool]
 ):
     src_mac = "00:00:00:12:34:ff"
     dst_mac = "00:00:00:ff:00:1e"
@@ -486,9 +486,9 @@ def test_tcp_packet_filter_and_parse_with_multiple_different_field_templates(
     }
 
     packet = (
-            ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
-            + ip.IP(src_s=src_ip, dst_s=dst_ip)
-            + tcp.TCP(sport=src_port, dport=dst_port)
+        ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
+        + ip.IP(src_s=src_ip, dst_s=dst_ip)
+        + tcp.TCP(sport=src_port, dport=dst_port)
     )
 
     general_filter_and_parse_test(
@@ -524,7 +524,7 @@ def test_tcp_packet_filter_and_parse_with_multiple_different_field_templates(
 
 
 def test_tcp_packet_filter_and_parse_with_multiple_field_templates_sharing_fields(
-        marine_or_marine_pool: Union[Marine, MarinePool]
+    marine_or_marine_pool: Union[Marine, MarinePool]
 ):
     src_mac = "00:00:00:12:34:ff"
     dst_mac = "00:00:00:ff:00:1e"
@@ -552,9 +552,9 @@ def test_tcp_packet_filter_and_parse_with_multiple_field_templates_sharing_field
     }
 
     packet = (
-            ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
-            + ip.IP(src_s=src_ip, dst_s=dst_ip)
-            + tcp.TCP(sport=src_port, dport=dst_port)
+        ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
+        + ip.IP(src_s=src_ip, dst_s=dst_ip)
+        + tcp.TCP(sport=src_port, dport=dst_port)
     )
 
     general_filter_and_parse_test(
@@ -570,7 +570,7 @@ def test_tcp_packet_filter_and_parse_with_multiple_field_templates_sharing_field
 
 
 def test_radiotap_packet_filter_and_parse(
-        marine_or_marine_pool: Union[Marine, MarinePool]
+    marine_or_marine_pool: Union[Marine, MarinePool]
 ):
     src_ip = "78.78.78.255"
     dst_ip = "10.0.0.255"
@@ -587,13 +587,13 @@ def test_radiotap_packet_filter_and_parse(
     }
 
     packet = (
-            radiotap.Radiotap(present_flags=radiotap.CHANNEL_MASK + radiotap.RATE_MASK)
-            + ieee80211.IEEE80211(framectl=0x8801)
-            + ieee80211.IEEE80211.Dataframe(sec_param=None)
-            + llc.LLC(
-        dsap=170, ssap=170, ctrl=3, snap=int.to_bytes(llc.LLC_TYPE_IP, 5, "big")
-    )
-            + ip.IP(src_s=src_ip, dst_s=dst_ip)
+        radiotap.Radiotap(present_flags=radiotap.CHANNEL_MASK + radiotap.RATE_MASK)
+        + ieee80211.IEEE80211(framectl=0x8801)
+        + ieee80211.IEEE80211.Dataframe(sec_param=None)
+        + llc.LLC(
+            dsap=170, ssap=170, ctrl=3, snap=int.to_bytes(llc.LLC_TYPE_IP, 5, "big")
+        )
+        + ip.IP(src_s=src_ip, dst_s=dst_ip)
     )
 
     general_filter_and_parse_test(
@@ -609,7 +609,7 @@ def test_radiotap_packet_filter_and_parse(
 
 
 def test_radiotap_packet_filter_and_parse_failing_wrong_encapsulation(
-        marine_or_marine_pool: Union[Marine, MarinePool]
+    marine_or_marine_pool: Union[Marine, MarinePool]
 ):
     src_ip = "78.78.78.255"
     dst_ip = "10.0.0.255"
@@ -617,13 +617,13 @@ def test_radiotap_packet_filter_and_parse_failing_wrong_encapsulation(
     display_filter = "ip"
 
     packet = (
-            radiotap.Radiotap(present_flags=radiotap.CHANNEL_MASK + radiotap.RATE_MASK)
-            + ieee80211.IEEE80211(framectl=0x8801)
-            + ieee80211.IEEE80211.Dataframe(sec_param=None)
-            + llc.LLC(
-        dsap=170, ssap=170, ctrl=3, snap=int.to_bytes(llc.LLC_TYPE_IP, 5, "big")
-    )
-            + ip.IP(src_s=src_ip, dst_s=dst_ip)
+        radiotap.Radiotap(present_flags=radiotap.CHANNEL_MASK + radiotap.RATE_MASK)
+        + ieee80211.IEEE80211(framectl=0x8801)
+        + ieee80211.IEEE80211.Dataframe(sec_param=None)
+        + llc.LLC(
+            dsap=170, ssap=170, ctrl=3, snap=int.to_bytes(llc.LLC_TYPE_IP, 5, "big")
+        )
+        + ip.IP(src_s=src_ip, dst_s=dst_ip)
     )
 
     general_filter_and_parse_test(
@@ -639,7 +639,7 @@ def test_radiotap_packet_filter_and_parse_failing_wrong_encapsulation(
 
 
 def test_radiotap_packet_filter_and_parse_parsing_wrong_encapsulation(
-        marine_or_marine_pool: Union[Marine, MarinePool]
+    marine_or_marine_pool: Union[Marine, MarinePool]
 ):
     src_ip = "78.78.78.255"
     dst_ip = "10.0.0.255"
@@ -654,13 +654,13 @@ def test_radiotap_packet_filter_and_parse_parsing_wrong_encapsulation(
     }
 
     packet = (
-            radiotap.Radiotap(present_flags=radiotap.CHANNEL_MASK + radiotap.RATE_MASK)
-            + ieee80211.IEEE80211(framectl=0x8801)
-            + ieee80211.IEEE80211.Dataframe(sec_param=None)
-            + llc.LLC(
-        dsap=170, ssap=170, ctrl=3, snap=int.to_bytes(llc.LLC_TYPE_IP, 5, "big")
-    )
-            + ip.IP(src_s=src_ip, dst_s=dst_ip)
+        radiotap.Radiotap(present_flags=radiotap.CHANNEL_MASK + radiotap.RATE_MASK)
+        + ieee80211.IEEE80211(framectl=0x8801)
+        + ieee80211.IEEE80211.Dataframe(sec_param=None)
+        + llc.LLC(
+            dsap=170, ssap=170, ctrl=3, snap=int.to_bytes(llc.LLC_TYPE_IP, 5, "big")
+        )
+        + ip.IP(src_s=src_ip, dst_s=dst_ip)
     )
 
     general_filter_and_parse_test(
@@ -676,7 +676,7 @@ def test_radiotap_packet_filter_and_parse_parsing_wrong_encapsulation(
 
 
 def test_tcp_packet_filter_and_parse_with_auto_encap(
-        marine_or_marine_pool: Union[Marine, MarinePool]
+    marine_or_marine_pool: Union[Marine, MarinePool]
 ):
     src_mac = "00:00:00:12:34:ff"
     dst_mac = "00:00:00:ff:00:1e"
@@ -696,9 +696,9 @@ def test_tcp_packet_filter_and_parse_with_auto_encap(
     }
 
     packet = (
-            ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
-            + ip.IP(src_s=src_ip, dst_s=dst_ip)
-            + tcp.TCP(sport=src_port, dport=dst_port)
+        ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
+        + ip.IP(src_s=src_ip, dst_s=dst_ip)
+        + tcp.TCP(sport=src_port, dport=dst_port)
     )
 
     general_filter_and_parse_test(
@@ -714,7 +714,7 @@ def test_tcp_packet_filter_and_parse_with_auto_encap(
 
 
 def test_radiotap_packet_filter_and_parse_with_auto_encap(
-        marine_or_marine_pool: Union[Marine, MarinePool]
+    marine_or_marine_pool: Union[Marine, MarinePool]
 ):
     src_ip = "78.78.78.255"
     dst_ip = "10.0.0.255"
@@ -731,13 +731,13 @@ def test_radiotap_packet_filter_and_parse_with_auto_encap(
     }
 
     packet = (
-            radiotap.Radiotap(present_flags=radiotap.CHANNEL_MASK + radiotap.RATE_MASK)
-            + ieee80211.IEEE80211(framectl=0x8801)
-            + ieee80211.IEEE80211.Dataframe(sec_param=None)
-            + llc.LLC(
-        dsap=170, ssap=170, ctrl=3, snap=int.to_bytes(llc.LLC_TYPE_IP, 5, "big")
-    )
-            + ip.IP(src_s=src_ip, dst_s=dst_ip)
+        radiotap.Radiotap(present_flags=radiotap.CHANNEL_MASK + radiotap.RATE_MASK)
+        + ieee80211.IEEE80211(framectl=0x8801)
+        + ieee80211.IEEE80211.Dataframe(sec_param=None)
+        + llc.LLC(
+            dsap=170, ssap=170, ctrl=3, snap=int.to_bytes(llc.LLC_TYPE_IP, 5, "big")
+        )
+        + ip.IP(src_s=src_ip, dst_s=dst_ip)
     )
 
     general_filter_and_parse_test(
@@ -753,7 +753,7 @@ def test_radiotap_packet_filter_and_parse_with_auto_encap(
 
 
 def test_radiotap_packet_filter_and_parse_with_auto_encap_in_field_template(
-        marine_or_marine_pool: Union[Marine, MarinePool]
+    marine_or_marine_pool: Union[Marine, MarinePool]
 ):
     src_ip = "78.78.78.255"
     dst_ip = "10.0.0.255"
@@ -767,13 +767,13 @@ def test_radiotap_packet_filter_and_parse_with_auto_encap_in_field_template(
     }
 
     packet = (
-            radiotap.Radiotap(present_flags=radiotap.CHANNEL_MASK + radiotap.RATE_MASK)
-            + ieee80211.IEEE80211(framectl=0x8801)
-            + ieee80211.IEEE80211.Dataframe(sec_param=None)
-            + llc.LLC(
-        dsap=170, ssap=170, ctrl=3, snap=int.to_bytes(llc.LLC_TYPE_IP, 5, "big")
-    )
-            + ip.IP(src_s=src_ip, dst_s=dst_ip)
+        radiotap.Radiotap(present_flags=radiotap.CHANNEL_MASK + radiotap.RATE_MASK)
+        + ieee80211.IEEE80211(framectl=0x8801)
+        + ieee80211.IEEE80211.Dataframe(sec_param=None)
+        + llc.LLC(
+            dsap=170, ssap=170, ctrl=3, snap=int.to_bytes(llc.LLC_TYPE_IP, 5, "big")
+        )
+        + ip.IP(src_s=src_ip, dst_s=dst_ip)
     )
 
     general_filter_and_parse_test(
@@ -789,7 +789,7 @@ def test_radiotap_packet_filter_and_parse_with_auto_encap_in_field_template(
 
 
 def test_filter_and_parse_without_filters(
-        marine_or_marine_pool: Union[Marine, MarinePool]
+    marine_or_marine_pool: Union[Marine, MarinePool]
 ):
     src_mac = "00:00:00:12:34:ff"
     dst_mac = "00:00:00:ff:00:1e"
@@ -807,9 +807,9 @@ def test_filter_and_parse_without_filters(
     }
 
     packet = (
-            ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
-            + ip.IP(src_s=src_ip, dst_s=dst_ip)
-            + tcp.TCP(sport=src_port, dport=dst_port)
+        ethernet.Ethernet(src_s=src_mac, dst_s=dst_mac)
+        + ip.IP(src_s=src_ip, dst_s=dst_ip)
+        + tcp.TCP(sport=src_port, dport=dst_port)
     )
 
     general_filter_and_parse_test(
@@ -825,7 +825,7 @@ def test_filter_and_parse_without_filters(
 
 
 def test_filter_and_parse_without_fields(
-        marine_or_marine_pool: Union[Marine, MarinePool], tcp_packet: bytes
+    marine_or_marine_pool: Union[Marine, MarinePool], tcp_packet: bytes
 ):
     general_filter_and_parse_test(
         marine_or_marine_pool=marine_or_marine_pool,
@@ -840,9 +840,9 @@ def test_filter_and_parse_without_fields(
 
 
 def test_packet_doesnt_pass_filter_because_of_bpf(
-        marine_instance: Marine,
-        tcp_packet: bytes,
-        extracted_fields_from_tcp_packet: List[str],
+    marine_instance: Marine,
+    tcp_packet: bytes,
+    extracted_fields_from_tcp_packet: List[str],
 ):
     passed, output = filter_and_parse(
         marine_instance,
@@ -857,9 +857,9 @@ def test_packet_doesnt_pass_filter_because_of_bpf(
 
 
 def test_packet_doesnt_pass_filter_because_of_display_filter(
-        marine_instance: Marine,
-        tcp_packet: bytes,
-        extracted_fields_from_tcp_packet: List[str],
+    marine_instance: Marine,
+    tcp_packet: bytes,
+    extracted_fields_from_tcp_packet: List[str],
 ):
     passed, output = filter_and_parse(
         marine_instance,
@@ -874,7 +874,7 @@ def test_packet_doesnt_pass_filter_because_of_display_filter(
 
 
 def test_illegal_bpf_in_filter_and_parse(
-        marine_or_marine_pool: Union[Marine, MarinePool], tcp_packet: bytes
+    marine_or_marine_pool: Union[Marine, MarinePool], tcp_packet: bytes
 ):
     with pytest.raises(BadBPFException, match="syntax error"):
         filter_and_parse(
@@ -886,10 +886,10 @@ def test_illegal_bpf_in_filter_and_parse(
 
 
 def test_illegal_display_filter_in_filter_and_parse(
-        marine_or_marine_pool: Union[Marine, MarinePool], tcp_packet: bytes
+    marine_or_marine_pool: Union[Marine, MarinePool], tcp_packet: bytes
 ):
     with pytest.raises(
-            BadDisplayFilterException, match="neither a field nor a protocol name"
+        BadDisplayFilterException, match="neither a field nor a protocol name"
     ):
         filter_and_parse(
             marine_or_marine_pool,
@@ -900,7 +900,7 @@ def test_illegal_display_filter_in_filter_and_parse(
 
 
 def test_illegal_fields_in_filter_and_parse(
-        marine_or_marine_pool: Union[Marine, MarinePool], tcp_packet: bytes
+    marine_or_marine_pool: Union[Marine, MarinePool], tcp_packet: bytes
 ):
     with pytest.raises(InvalidFieldException) as excinfo:
         filter_and_parse(
@@ -917,7 +917,7 @@ def test_illegal_fields_in_filter_and_parse(
 
 
 def test_filter_and_parse_with_no_parameters(
-        marine_or_marine_pool: Union[Marine, MarinePool], tcp_packet: bytes
+    marine_or_marine_pool: Union[Marine, MarinePool], tcp_packet: bytes
 ):
     with pytest.raises(ValueError, match="must be passed"):
         filter_and_parse(marine_or_marine_pool, tcp_packet, encap_consts.ENCAP_ETHERNET)
@@ -1001,15 +1001,15 @@ def test_auto_encap_on_empty_fields(marine_instance: Marine):
 
 def test_auto_encap_ethernet(marine_instance: Marine):
     assert (
-            marine_instance._detect_encap(["ip.src", "ip.dst"])
-            == encap_consts.ENCAP_ETHERNET
+        marine_instance._detect_encap(["ip.src", "ip.dst"])
+        == encap_consts.ENCAP_ETHERNET
     )
 
 
 def test_auto_encap_wireless(marine_instance: Marine):
     assert (
-            marine_instance._detect_encap(["ip.src", "ip.dst", "radiotap.channel"])
-            == encap_consts.ENCAP_IEEE_802_11_RADIOTAP
+        marine_instance._detect_encap(["ip.src", "ip.dst", "radiotap.channel"])
+        == encap_consts.ENCAP_IEEE_802_11_RADIOTAP
     )
 
 
@@ -1028,12 +1028,34 @@ def test_parse_fields_preserves_order(marine_instance: Marine, tcp_packet: bytes
 
 
 def test_parse_all_fields_int_value(tcp_packet_fields):
-    assert isinstance(tcp_packet_fields['tcp']['tcp.srcport'], int)
+    tcp_source_port = tcp_packet_fields["tcp"]["tcp.srcport"]
+    assert isinstance(tcp_source_port, int)
+    assert tcp_source_port == 16424
 
 
 def test_parse_all_fields_str_value(tcp_packet_fields):
-    assert isinstance(tcp_packet_fields['ip']['ip.src'], str)
+    ip_src = tcp_packet_fields["ip"]["ip.src"]
+    assert isinstance(ip_src, str)
+    assert ip_src == "10.0.0.255"
 
 
 def test_parse_all_fields_list_value(tcp_packet_fields):
-    assert isinstance(tcp_packet_fields['ip']['ip.addr'], list)
+    ip_addr = tcp_packet_fields["ip"]["ip.addr"]
+    assert isinstance(ip_addr, list)
+    assert "10.0.0.255" in ip_addr
+    assert "21.53.78.255" in ip_addr
+
+
+def test_parse_all_fields_bool_value(tcp_packet_fields):
+    tcp_ack_flag = tcp_packet_fields["tcp"]["tcp.flags_tree"]["tcp.flags.ack"]
+    tcp_fin_flag = tcp_packet_fields["tcp"]["tcp.flags_tree"]["tcp.flags.fin"]
+    assert isinstance(tcp_ack_flag, bool)
+    assert isinstance(tcp_fin_flag, bool)
+    assert tcp_ack_flag
+    assert not tcp_fin_flag
+
+
+def test_parse_all_fields_bytes_value(tcp_packet_fields, tcp_payload):
+    parsed_tcp_payload = tcp_packet_fields["tcp"]["tcp.payload"]
+    assert isinstance(parsed_tcp_payload, bytes)
+    assert parsed_tcp_payload == tcp_payload
