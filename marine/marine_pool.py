@@ -3,7 +3,7 @@ import multiprocessing
 from itertools import repeat
 from typing import List, Dict, Optional, Tuple, ClassVar
 
-from .marine import Marine
+from .marine import Marine, ParsedPacket
 
 
 class MarinePool:
@@ -85,6 +85,16 @@ class MarinePool:
             chunksize=chunk_size,
         )
 
+    def parse_all_fields(
+        self, packets: List[bytes], encapsulation_type: Optional[int] = None
+    ) -> List[ParsedPacket]:
+        chunk_size = int(math.ceil(len(packets) / float(self._process_count)))
+        return self.pool.starmap(
+            self._parse_all_fields,
+            zip(packets, repeat(encapsulation_type)),
+            chunksize=chunk_size,
+        )
+
     @classmethod
     def _init_marine(cls, epan_auto_reset_count: int) -> None:
         cls._marine_instance = Marine(epan_auto_reset_count)
@@ -102,6 +112,12 @@ class MarinePool:
         return cls._marine_instance.filter_and_parse(
             packet, bpf, display_filter, fields, encapsulation_type, field_templates
         )
+
+    @classmethod
+    def _parse_all_fields(
+        cls, packet: bytes, encapsulation_type: Optional[int] = None
+    ) -> ParsedPacket:
+        return cls._marine_instance.parse_all_fields(packet, encapsulation_type)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.pool.close()

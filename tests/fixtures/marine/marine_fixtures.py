@@ -16,13 +16,23 @@ def extracted_fields_from_tcp_packet() -> List[str]:
 
 
 @pytest.fixture
-def tcp_packet() -> bytes:
+def tcp_payload() -> bytes:
+    return b"payload"
+
+
+@pytest.fixture
+def tcp_packet(tcp_payload) -> bytes:
     packet = (
         ethernet.Ethernet(src_s="00:00:00:12:34:ff", dst_s="00:00:00:ff:00:1e")
         + ip.IP(src_s="10.0.0.255", dst_s="21.53.78.255")
-        + tcp.TCP(sport=16424, dport=41799)
+        + tcp.TCP(sport=16424, dport=41799, flags=tcp.TH_ACK, body_bytes=tcp_payload)
     )
     return packet.bin()
+
+
+@pytest.fixture
+def tcp_packet_fields(marine_instance: Marine, tcp_packet: bytes):
+    return marine_instance.parse_all_fields(tcp_packet)
 
 
 @pytest.fixture(scope="session")

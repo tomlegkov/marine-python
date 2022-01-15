@@ -11,9 +11,9 @@ from pypacker.layer3 import ip, icmp
 from pypacker.layer4 import tcp, udp
 from pypacker.layer567 import dns, http, dhcp
 
-
 from marine import encap_consts
 from marine import BadBPFException, BadDisplayFilterException, InvalidFieldException
+
 
 # TODO: Add a test for FTP.
 
@@ -1025,3 +1025,37 @@ def test_parse_fields_preserves_order(marine_instance: Marine, tcp_packet: bytes
         "udp.srcport": None,
         "tcp.srcport": "16424",
     }
+
+
+def test_parse_all_fields_int_value(tcp_packet_fields):
+    tcp_source_port = tcp_packet_fields["tcp"]["tcp.srcport"]
+    assert isinstance(tcp_source_port, int)
+    assert tcp_source_port == 16424
+
+
+def test_parse_all_fields_str_value(tcp_packet_fields):
+    ip_src = tcp_packet_fields["ip"]["ip.src"]
+    assert isinstance(ip_src, str)
+    assert ip_src == "10.0.0.255"
+
+
+def test_parse_all_fields_list_value(tcp_packet_fields):
+    ip_addr = tcp_packet_fields["ip"]["ip.addr"]
+    assert isinstance(ip_addr, list)
+    assert "10.0.0.255" in ip_addr
+    assert "21.53.78.255" in ip_addr
+
+
+def test_parse_all_fields_bool_value(tcp_packet_fields):
+    tcp_ack_flag = tcp_packet_fields["tcp"]["tcp.flags_tree"]["tcp.flags.ack"]
+    tcp_fin_flag = tcp_packet_fields["tcp"]["tcp.flags_tree"]["tcp.flags.fin"]
+    assert isinstance(tcp_ack_flag, bool)
+    assert isinstance(tcp_fin_flag, bool)
+    assert tcp_ack_flag
+    assert not tcp_fin_flag
+
+
+def test_parse_all_fields_bytes_value(tcp_packet_fields, tcp_payload):
+    parsed_tcp_payload = tcp_packet_fields["tcp"]["tcp.payload"]
+    assert isinstance(parsed_tcp_payload, bytes)
+    assert parsed_tcp_payload == tcp_payload

@@ -1,6 +1,22 @@
-from ctypes import *
+from ctypes import (
+    CDLL,
+    POINTER,
+    Structure,
+    c_char,
+    c_char_p,
+    c_long,
+    c_int,
+    c_ulong,
+    c_uint,
+    c_uint8,
+    c_ubyte,
+    cdll,
+    string_at,
+    pointer,
+)
 from pathlib import Path
-from typing import Optional, List, Dict, Tuple, NamedTuple
+from typing import Optional, List, Dict, Tuple, NamedTuple, Union
+import ctypes
 import os
 
 from .exceptions import (
@@ -16,7 +32,71 @@ class MarineResult(Structure):
     _fields_ = [("output", POINTER(c_char_p)), ("len", c_uint), ("result", c_int)]
 
 
+class MarinePacketFieldValues(ctypes.Union):
+    pass
+
+
+class MarinePacketFieldValue(Structure):
+    pass
+
+
+MarinePacketFieldValues._fields_ = [
+    ("int_value", c_long),
+    ("uint_value", c_ulong),
+    ("bool_value", c_ubyte),
+    ("str_value", c_char_p),
+    ("bytes_value", c_char_p),
+    ("list_value", POINTER(MarinePacketFieldValue)),
+]
+
+MarinePacketFieldValue._anonymous_ = ["values"]
+MarinePacketFieldValue._fields_ = [
+    ("values", MarinePacketFieldValues),
+    ("len", c_uint),
+    ("type", c_uint),
+]
+
+
+class MarinePacketFieldValueType:
+    NONE = 0
+    INT = 1
+    UINT = 2
+    BOOL = 3
+    STR = 4
+    BYTES = 5
+    LIST = 6
+
+
+class MarinePacketFieldChildren(Structure):
+    pass
+
+
+class MarinePacketField(Structure):
+    _fields_ = [
+        ("name", c_char_p),
+        ("children", POINTER(MarinePacketFieldChildren)),
+        ("value", MarinePacketFieldValue),
+    ]
+
+
+MarinePacketFieldChildren._fields_ = [
+    ("data", POINTER(MarinePacketField)),
+    ("len", c_uint),
+]
+
+
+class MarinePacket(Structure):
+    _fields_ = [
+        ("source_packet", POINTER(c_uint8)),
+        ("source_packet_length", c_uint),
+        ("layer_tree", POINTER(MarinePacketField)),
+    ]
+
+
+ParsedPacket = Dict[str, Union[bytes, int, str, "ParsedPacket"]]
+
 MARINE_RESULT_POINTER = POINTER(MarineResult)
+MARINE_PACKET_POINTER = POINTER(MarinePacket)
 
 MARINE_BASE_DIR = Path(__file__).parent / ".ws"
 MARINE_NAME = MARINE_BASE_DIR / "libs" / "libmarine.so"
@@ -64,6 +144,9 @@ class Marine:
         self._marine = CDLL(MARINE_NAME)
         self._marine.marine_dissect_packet.restype = MARINE_RESULT_POINTER
         self._marine.marine_free.argtypes = [MARINE_RESULT_POINTER]
+        self._marine.marine_dissect_all_packet_fields.restype = MARINE_PACKET_POINTER
+        self._marine.marine_packet_free.argtypes = [MARINE_PACKET_POINTER]
+
         return_code = self._marine.init_marine()
         if return_code < 0:
             if (
@@ -187,6 +270,20 @@ class Marine:
         self._marine.marine_free(marine_result)
         return success, result
 
+    def parse_all_fields(
+        self,
+        packet: bytes,
+        encapsulation_type: Optional[int] = encap_consts.ENCAP_ETHERNET,
+    ) -> ParsedPacket:
+        marine_packet = self._marine.marine_dissect_all_packet_fields(
+            packet, len(packet), encapsulation_type
+        )
+        packet_dict = self._load_marine_packet(
+            marine_packet.contents.layer_tree.contents
+        )
+        self._marine.marine_packet_free(marine_packet)
+        return packet_dict
+
     def _resolve_err_msg(self, err_msg: POINTER(POINTER(c_char))) -> Optional[str]:
         if not err_msg.contents:
             return None
@@ -232,6 +329,43 @@ class Marine:
             output[i][:].decode("utf-8") if output[i] is not None else None
             for i in range(length)
         )
+
+    @classmethod
+    def _load_marine_packet(cls, field):
+        if field.children:
+            return cls._load_child_fields(field.children.contents)
+        else:
+            return cls._load_field_value(field.value)
+
+    @classmethod
+    def _load_child_fields(cls, children):
+        child_fields = {}
+        for child in children.data[: children.len]:
+            name = child.name.decode("utf-8")
+            value = cls._load_marine_packet(child)
+            child_fields[name] = value
+        return child_fields
+
+    @classmethod
+    def _load_field_value(cls, value):
+        value_len = value.len
+        value_type = value.type
+        if value_type == 0 or value_len <= 0:
+            return None
+        elif value_type == MarinePacketFieldValueType.INT:
+            return value.int_value
+        elif value_type == MarinePacketFieldValueType.UINT:
+            return value.uint_value
+        elif value_type == MarinePacketFieldValueType.BOOL:
+            return bool(value.bool_value)
+        elif value_type == MarinePacketFieldValueType.STR:
+            return value.str_value.decode("utf-8")
+        elif value_type == MarinePacketFieldValueType.BYTES:
+            return value.str_value[:value_len]
+        elif value_type == MarinePacketFieldValueType.LIST:
+            return [cls._load_field_value(v) for v in value.list_value[:value_len]]
+        else:
+            raise ValueError(f"Unknown value type {value_type}")
 
     def _add_or_get_filter(
         self,
