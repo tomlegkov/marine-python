@@ -25,7 +25,7 @@ RUN /scripts/expose_auditwheel.sh && \
     $PY /scripts/modify_auditwheel_policy.py && \
     /scripts/patch_auditwheel_recursive_dependency_bug.sh
 
-RUN auditwheel repair -w /dist /tmp/marine*.whl
+RUN auditwheel repair --plat manylinux2014_x86_64 -w /dist /tmp/marine*.whl
 
 
 
