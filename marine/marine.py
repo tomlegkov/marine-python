@@ -341,7 +341,7 @@ class Marine:
     def _load_child_fields(cls, children):
         child_fields = {}
         for child in children.data[: children.len]:
-            name = child.name.decode("utf-8")
+            name = cls._safe_decode(child.name)
             value = cls._load_marine_packet(child)
             child_fields[name] = value
         return child_fields
@@ -359,13 +359,20 @@ class Marine:
         elif value_type == MarinePacketFieldValueType.BOOL:
             return bool(value.bool_value)
         elif value_type == MarinePacketFieldValueType.STR:
-            return value.str_value.decode("utf-8")
+            return cls._safe_decode(value.str_value)
         elif value_type == MarinePacketFieldValueType.BYTES:
             return value.str_value[:value_len]
         elif value_type == MarinePacketFieldValueType.LIST:
             return [cls._load_field_value(v) for v in value.list_value[:value_len]]
         else:
             raise ValueError(f"Unknown value type {value_type}")
+
+    @staticmethod
+    def _safe_decode(raw_value: bytes) -> str:
+        try:
+            return raw_value.decode("utf-8")
+        except UnicodeDecodeError:
+            return raw_value.hex()
 
     def _add_or_get_filter(
         self,
