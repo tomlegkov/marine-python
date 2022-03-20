@@ -2,6 +2,7 @@ from .simple_marine import (
     filter_packet,
     parse_packet,
     filter_and_parse_packet,
+    parse_all_packet_fields,
     report_fields,
     validate_bpf,
     validate_fields,
