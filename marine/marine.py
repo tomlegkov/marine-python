@@ -271,10 +271,11 @@ class Marine:
         return success, result
 
     def parse_all_fields(
-        self,
-        packet: bytes,
-        encapsulation_type: Optional[int] = encap_consts.ENCAP_ETHERNET,
+        self, packet: bytes, encapsulation_type: Optional[int] = None
     ) -> ParsedPacket:
+        encapsulation_type = (
+            encapsulation_type if encapsulation_type else encap_consts.ENCAP_ETHERNET
+        )
         marine_packet = self._marine.marine_dissect_all_packet_fields(
             packet, len(packet), encapsulation_type
         )
