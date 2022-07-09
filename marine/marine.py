@@ -25,6 +25,7 @@ from .exceptions import (
     InvalidFieldException,
     UnknownInternalException,
 )
+from .marine_prefs import MarinePreferences
 from . import encap_consts
 
 
@@ -160,6 +161,8 @@ class Marine:
 
         if epan_auto_reset_count:
             self._marine.set_epan_auto_reset_count(epan_auto_reset_count)
+
+        self.prefs = MarinePreferences(self._marine)
 
     @property
     def epan_auto_reset_count(self) -> int:

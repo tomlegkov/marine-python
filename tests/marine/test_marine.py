@@ -1059,3 +1059,39 @@ def test_parse_all_fields_bytes_value(tcp_packet_fields, tcp_payload):
     parsed_tcp_payload = tcp_packet_fields["tcp"]["tcp.payload"]
     assert isinstance(parsed_tcp_payload, bytes)
     assert parsed_tcp_payload == tcp_payload
+
+
+def test_boolean_preference(marine_instance):
+    marine_instance.prefs.set_bool("tcp", "reassemble_out_of_order", True)
+
+    assert marine_instance.prefs.get_bool("tcp", "reassemble_out_of_order")
+
+
+def test_uint_preference(marine_instance):
+    marine_instance.prefs.set_uint("amqp", "tls.port", 1234)
+
+    assert marine_instance.prefs.get_uint("amqp", "tls.port") == 1234
+
+
+def test_string_preference(marine_instance):
+    marine_instance.prefs.set_str("lbmr", "mc_outgoing_address", "1234,1234,1234,1234")
+
+    assert (
+        marine_instance.prefs.get_str("lbmr", "mc_outgoing_address")
+        == "1234,1234,1234,1234"
+    )
+
+
+def test_value_error_for_unknown_module_name(marine_instance):
+    with pytest.raises(ValueError):
+        marine_instance.prefs.set_str("marine", "test", "test")
+
+
+def test_value_error_for_unknown_pref_name(marine_instance):
+    with pytest.raises(ValueError):
+        marine_instance.prefs.set_str("amqp", "marine", "test")
+
+
+def test_type_error_for_invalid_pref_type(marine_instance):
+    with pytest.raises(TypeError):
+        marine_instance.prefs.set_str("amqp", "tls.port", "1234")
