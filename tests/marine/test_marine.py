@@ -1096,3 +1096,8 @@ def test_value_error_for_unknown_pref_name(marine_instance):
 def test_type_error_for_invalid_pref_type(marine_instance):
     with pytest.raises(TypeError):
         marine_instance.prefs.set_str("amqp", "tls.port", "1234")
+
+
+def test_get_wireshark_version(marine_instance: Marine):
+    version = marine_instance.get_wireshark_version()
+    assert isinstance(version, str)

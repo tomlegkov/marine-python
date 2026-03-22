@@ -141,3 +141,10 @@ def report_fields() -> None:
     Dumps to stdout all of marine, similiarly to `tshark -G`
     """
     return get_marine().report_fields()
+
+
+def get_wireshark_version() -> str:
+    """
+    Gets the version of wireshark used by marine.
+    """
+    return get_marine().get_wireshark_version()

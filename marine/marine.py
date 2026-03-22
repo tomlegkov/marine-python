@@ -147,6 +147,7 @@ class Marine:
         self._marine.marine_free.argtypes = [MARINE_RESULT_POINTER]
         self._marine.marine_dissect_all_packet_fields.restype = MARINE_PACKET_POINTER
         self._marine.marine_packet_free.argtypes = [MARINE_PACKET_POINTER]
+        self._marine.get_wireshark_version.restype = c_char_p
 
         return_code = self._marine.init_marine()
         if return_code < 0:
@@ -471,3 +472,7 @@ class Marine:
 
     def report_fields(self) -> None:
         self._marine.marine_report_fields()
+
+    def get_wireshark_version(self) -> str:
+        version = self._marine.get_wireshark_version()
+        return version.decode("utf-8")
