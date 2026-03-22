@@ -14,7 +14,8 @@ ENV PY="/opt/python/cp38-cp38/bin/python"
 RUN mkdir -p marine/.ws/data && \
     rsync -L --exclude idl2wrs --exclude 'lib*.so*' --exclude 'plugins*' --exclude 'marine_*' --exclude tshark --exclude '*.html' --exclude 'lib*.a' /build/run/* marine/.ws/data/ && \
     mkdir marine/.ws/libs && \
-    rsync -L /build/run/libmarine.so /build/run/lib*so.0 marine/.ws/libs/ && \
+    rsync -L /build/run/libmarine.so /build/run/lib*so.* marine/.ws/libs/ && \
+    $PY -m pip install --no-cache-dir setuptools wheel && \
     $PY setup.py bdist_wheel --dist-dir /tmp
 
 WORKDIR /dist
@@ -33,7 +34,10 @@ FROM centos/python-38-centos7
 
 USER root
 
-RUN yum install -y libpcap && \
+RUN sed -i 's/mirror\.centos\.org/vault.centos.org/g' /etc/yum.repos.d/CentOS-*.repo && \
+    sed -i 's/^#.*baseurl=http/baseurl=http/g' /etc/yum.repos.d/CentOS-*.repo && \
+    sed -i 's/^mirrorlist=http/#mirrorlist=http/g' /etc/yum.repos.d/CentOS-*.repo && \
+    yum install -y libpcap && \
     yum clean all && \
     rm -rf /var/yum/cache
 
