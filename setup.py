@@ -1,8 +1,10 @@
 from setuptools import setup
 
+from marine._version import __version__
+
 setup(
     name="marine",
-    version="3.1.2",
+    version=__version__,
     description="Python client for Marine",
     packages=["marine"],
     include_package_data=True,

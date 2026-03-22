@@ -9,9 +9,11 @@ COPY README.md ./
 COPY LICENSE ./
 COPY marine ./marine
 
+ARG MARINE_VERSION=0.0.0
 ENV PY="/opt/python/cp38-cp38/bin/python"
 
-RUN mkdir -p marine/.ws/data && \
+RUN echo "__version__ = \"${MARINE_VERSION}\"" > marine/_version.py && \
+    mkdir -p marine/.ws/data && \
     rsync -L --exclude idl2wrs --exclude 'lib*.so*' --exclude 'plugins*' --exclude 'marine_*' --exclude tshark --exclude '*.html' --exclude 'lib*.a' /build/run/* marine/.ws/data/ && \
     mkdir marine/.ws/libs && \
     rsync -L /build/run/libmarine.so /build/run/lib*so.* marine/.ws/libs/ && \
