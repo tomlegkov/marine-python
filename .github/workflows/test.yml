@@ -8,16 +8,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6
 
     - name: Extract branch name
       shell: bash
-      run: echo "##[set-output name=tag;]$(echo ${GITHUB_REF#refs/heads/} | tr / -)"
+      run: echo "tag=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_OUTPUT
       id: extract_branch
 
     - name: "Pull core image"
       shell: bash
-      run: echo -n "##[set-output name=tag;]" && docker pull tomlegkov/marine-core:${{ steps.extract_branch.outputs.tag }} > /dev/null && echo "${{ steps.extract_branch.outputs.tag }}" || echo marine
+      run: |
+        if docker pull tomlegkov/marine-core:${{ steps.extract_branch.outputs.tag }} > /dev/null 2>&1; then
+          echo "tag=${{ steps.extract_branch.outputs.tag }}" >> $GITHUB_OUTPUT
+        else
+          echo "tag=marine" >> $GITHUB_OUTPUT
+        fi
       id: detect_tag
 
     - name: "Build marine-python docker image"
@@ -26,7 +31,7 @@ jobs:
     - name: "Extract wheel from docker image"
       run: docker run -i --rm -v $(pwd)/dist:/io marine-python sh -c "cp /dist/marine*.whl /io/"
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v6
       with:
         path: dist/*.whl
 
