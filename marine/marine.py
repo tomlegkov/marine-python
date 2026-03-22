@@ -241,9 +241,11 @@ class Marine:
             bpf,
             display_filter,
             tuple(encoded_fields) if fields is not None else None,
-            tuple(field_template_indices)
-            if field_template_indices is not None
-            else None,
+            (
+                tuple(field_template_indices)
+                if field_template_indices is not None
+                else None
+            ),
             encapsulation_type,
         )
         if filter_key in self._filters_cache:

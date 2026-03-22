@@ -1,6 +1,7 @@
 """
 Note: in order to run the tests, you must put libmarine.so next to the marine_fixtures.py file
 """
+
 import pytest
 from typing import List, Union, Optional, Dict
 from marine.marine import Marine, MarineFieldsValidationResult
