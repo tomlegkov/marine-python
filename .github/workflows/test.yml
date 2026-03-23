@@ -1,6 +1,11 @@
 name: Test
 
-on: push
+on:
+  push:
+    branches:
+      - '**'
+    tags:
+      - 'v*'
 
 jobs:
   test:
@@ -8,27 +13,56 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6
 
     - name: Extract branch name
       shell: bash
-      run: echo "##[set-output name=tag;]$(echo ${GITHUB_REF#refs/heads/} | tr / -)"
+      run: echo "tag=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_OUTPUT
       id: extract_branch
 
     - name: "Pull core image"
       shell: bash
-      run: echo -n "##[set-output name=tag;]" && docker pull tomlegkov/marine-core:${{ steps.extract_branch.outputs.tag }} > /dev/null && echo "${{ steps.extract_branch.outputs.tag }}" || echo marine
+      run: |
+        if docker pull tomlegkov/marine-core:${{ steps.extract_branch.outputs.tag }} > /dev/null 2>&1; then
+          echo "tag=${{ steps.extract_branch.outputs.tag }}" >> $GITHUB_OUTPUT
+        else
+          echo "tag=marine" >> $GITHUB_OUTPUT
+        fi
       id: detect_tag
 
+    - name: Extract version from tag
+      if: startsWith(github.ref, 'refs/tags/v')
+      run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      id: extract_version
+
     - name: "Build marine-python docker image"
-      run: docker build --build-arg MARINE_CORE_TAG=${{ steps.detect_tag.outputs.tag }} --pull -t marine-python .
+      run: docker build --build-arg MARINE_CORE_TAG=${{ steps.detect_tag.outputs.tag }} --build-arg MARINE_VERSION=${{ steps.extract_version.outputs.version || '0.0.0' }} --pull -t marine-python .
 
     - name: "Extract wheel from docker image"
       run: docker run -i --rm -v $(pwd)/dist:/io marine-python sh -c "cp /dist/marine*.whl /io/"
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v6
       with:
+        name: wheel
         path: dist/*.whl
 
     - name: "Run marine-python tests"
       run: docker run -i --rm marine-python
+
+  release:
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/download-artifact@v6
+      with:
+        name: wheel
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: '*.whl'
+        generate_release_notes: true

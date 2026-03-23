@@ -13,3 +13,4 @@ from .marine_pool import MarinePool
 from .exceptions import *
 from .marine import Marine
 from . import encap_consts
+from ._version import __version__
