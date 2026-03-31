@@ -1028,6 +1028,24 @@ def test_parse_fields_preserves_order(marine_instance: Marine, tcp_packet: bytes
     }
 
 
+def test_filter_cache_hit_with_reordered_fields(
+    marine_instance: Marine, tcp_packet: bytes
+):
+    result1 = marine_instance.filter_and_parse(
+        tcp_packet, fields=["tcp.srcport", "ip.src"]
+    )
+    cache_size_after_first = len(marine_instance._filters_cache)
+
+    result2 = marine_instance.filter_and_parse(
+        tcp_packet, fields=["ip.src", "tcp.srcport"]
+    )
+    cache_size_after_second = len(marine_instance._filters_cache)
+
+    assert result1 == (True, {"tcp.srcport": "16424", "ip.src": "10.0.0.255"})
+    assert result2 == (True, {"ip.src": "10.0.0.255", "tcp.srcport": "16424"})
+    assert cache_size_after_first == cache_size_after_second
+
+
 def test_parse_all_fields_int_value(tcp_packet_fields):
     tcp_source_port = tcp_packet_fields["tcp"]["tcp.srcport"]
     assert isinstance(tcp_source_port, int)
