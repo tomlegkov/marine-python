@@ -225,6 +225,8 @@ class Marine:
             display_filter = display_filter.encode("utf-8")
 
         if fields is not None:
+            # Sort fields to ensure consistent filter keys for better utilization of _filters_cache
+            fields = sorted(fields)
             expanded_fields, field_template_indices = self._expand_field_templates(
                 fields, field_templates
             )
